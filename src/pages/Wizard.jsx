@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Send, Share, Clock, DollarSign, AlertTriangle, Calendar, MessageCircle, X } from 'lucide-react';
+import { Shield, Send, Share, Clock, DollarSign, AlertTriangle, Calendar, MessageCircle, X, Paperclip } from 'lucide-react';
 import VirtualAdvisorModal from '../components/VirtualAdvisorModal';
+import { parsePolicy } from '../utils/policyParser';
 
 const LIFE_CHANGES = [
   'Marriage', 'Divorce', 'New child', 'Income change', 
@@ -11,18 +12,20 @@ const LIFE_CHANGES = [
 const Wizard = () => {
   const navigate = useNavigate();
   const bottomRef = useRef(null);
-  
+  const fileInputRef = useRef(null);
+
   const [step, setStep] = useState(1);
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
-  
+  const [uploadedFile, setUploadedFile] = useState(null);
+
   // Step 2 specific
   const [selectedChanges, setSelectedChanges] = useState([]);
   const [activeQuestion, setActiveQuestion] = useState(0);
-  
+
   // Step 3 specific
   const [loadingStep, setLoadingStep] = useState(0);
-  
+
   // Modals
   const [showSchedule, setShowSchedule] = useState(false);
   const [showVirtualAdvisor, setShowVirtualAdvisor] = useState(false);
@@ -47,7 +50,93 @@ const Wizard = () => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, step, loadingStep, activeQuestion]);
 
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadedFile(file);
+
+    setMessages(prev => [
+      ...prev,
+      { id: Date.now(), sender: 'user', text: '📎 Upload My Policy' },
+      { id: Date.now() + 1, sender: 'user', text: `📄 ${file.name}`, isFile: true },
+    ]);
+
+    setTimeout(() => {
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now() + 2,
+          sender: 'ai',
+          text: `Got it! I'm reading "${file.name}" now. This usually takes a few seconds…`,
+        },
+        { id: Date.now() + 3, sender: 'ai', isParsingDoc: true },
+      ]);
+    }, 600);
+
+    let stepIdx = 0;
+    const PARSE_STEPS = [
+      'Reading your document…',
+      'Identifying policy type and carrier…',
+      'Extracting coverage and benefit details…',
+      'Analyzing premium structure…',
+      'Preparing your analysis…',
+    ];
+    const ticker = setInterval(() => {
+      stepIdx = Math.min(stepIdx + 1, PARSE_STEPS.length - 1);
+      setLoadingStep(stepIdx);
+    }, 560);
+
+    try {
+      const extracted = await parsePolicy(file);
+      clearInterval(ticker);
+      setMessages(prev => prev.filter(m => !m.isParsingDoc));
+
+      const policyDesc = [
+        extracted.faceAmount && `$${(extracted.faceAmount / 1_000_000).toFixed(1)}M`,
+        extracted.policyType,
+        extracted.carrier && `from ${extracted.carrier}`,
+      ].filter(Boolean).join(' ');
+
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now() + 4,
+          sender: 'ai',
+          text: `I've extracted your policy details${policyDesc ? ' — ' + policyDesc : ''}. Let me ask a few follow-up questions to complete your analysis.`,
+        },
+        {
+          id: Date.now() + 5,
+          sender: 'ai',
+          text: 'Have you experienced any significant life changes since you purchased this policy?\nSelect all that apply:',
+          isLifeChangesInput: true,
+        },
+      ]);
+      setStep(2);
+    } catch {
+      clearInterval(ticker);
+      setMessages(prev => [
+        ...prev.filter(m => !m.isParsingDoc),
+        {
+          id: Date.now() + 6,
+          sender: 'ai',
+          text: "I had trouble reading that document. Let me use the demo policy instead so you can still see a full analysis.",
+        },
+        {
+          id: Date.now() + 7,
+          sender: 'ai',
+          text: 'Have you experienced any significant life changes?\nSelect all that apply:',
+          isLifeChangesInput: true,
+        },
+      ]);
+      setStep(2);
+    }
+  };
+
   const handleActionClick = (value) => {
+    if (value === 'upload') {
+      fileInputRef.current?.click();
+      return;
+    }
     if (value === 'demo') {
       setMessages(prev => [
         ...prev, 
@@ -190,6 +279,15 @@ const Wizard = () => {
 
   return (
     <div className="flex flex-col h-screen bg-brand-dark font-sans text-text-primary">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       {/* Top Nav */}
       <nav className="h-[60px] flex items-center justify-between px-6 bg-brand-slate border-b border-brand-slate-light flex-shrink-0">
         <div className="flex items-center gap-2 font-bold text-white">
@@ -296,6 +394,24 @@ const Wizard = () => {
                   <button className="w-full mt-6 py-3 px-6 bg-accent-amber hover:bg-accent-amber-hover text-brand-dark font-semibold rounded-lg transition-colors border border-transparent" onClick={submitLifeChanges}>
                     Continue
                   </button>
+                </div>
+              )}
+
+              {/* Document Parsing Progress */}
+              {msg.isParsingDoc && (
+                <div className="w-full max-w-[85%] p-5 rounded-2xl text-base leading-relaxed bg-brand-slate text-text-primary rounded-tl-none">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-5 h-5 border-4 border-amber-500/30 border-t-accent-amber rounded-full animate-spin flex-shrink-0" />
+                    <span className="text-accent-amber font-bold">Reading Your Policy…</span>
+                  </div>
+                  <div className="flex gap-1 mb-3">
+                    {[0,1,2,3,4].map(i => (
+                      <div key={i} className={`flex-1 h-1.5 rounded-full transition-colors duration-500 ${loadingStep >= i ? 'bg-accent-amber' : 'bg-brand-slate-light'}`} />
+                    ))}
+                  </div>
+                  <p className="text-text-muted text-sm">
+                    {['Reading your document…','Identifying policy type and carrier…','Extracting coverage details…','Analyzing premium structure…','Preparing your analysis…'][loadingStep]}
+                  </p>
                 </div>
               )}
 

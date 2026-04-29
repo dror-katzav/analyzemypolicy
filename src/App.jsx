@@ -12,7 +12,15 @@ import AIChatSidebar from './components/AIChatSidebar';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? children : <Navigate to="/" replace />;
+  if (!isAuthenticated) return <Navigate to="/" replace />;
+  // lg:mr-[300px] reserves space for the permanent 300px AI sidebar on desktop
+  return <div className="lg:mr-[300px]">{children}</div>;
+};
+
+// Renders the sidebar only when authenticated
+const AuthSidebar = () => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <AIChatSidebar /> : null;
 };
 
 function App() {
@@ -22,24 +30,12 @@ function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/analyze" element={<Wizard />} />
-          <Route
-            path="/dashboard"
-            element={<ProtectedRoute><Dashboard /></ProtectedRoute>}
-          />
-          <Route
-            path="/documents"
-            element={<ProtectedRoute><Documents /></ProtectedRoute>}
-          />
-          <Route
-            path="/advisor"
-            element={<ProtectedRoute><Advisor /></ProtectedRoute>}
-          />
-          <Route
-            path="/report/:id"
-            element={<ProtectedRoute><Report /></ProtectedRoute>}
-          />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
+          <Route path="/advisor" element={<ProtectedRoute><Advisor /></ProtectedRoute>} />
+          <Route path="/report/:id" element={<ProtectedRoute><Report /></ProtectedRoute>} />
         </Routes>
-        <AIChatSidebar />
+        <AuthSidebar />
       </Router>
     </AIChatProvider>
   );

@@ -10,19 +10,22 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const DEMO_PROFILE = {
-  given_name: 'Demo',
-  family_name: 'User',
-  email: 'demo@gmail.com',
-  picture: null,
-};
+const Btn = ({ loading, onClick, children }) => (
+  <button
+    type="button"
+    disabled={loading}
+    onClick={onClick}
+    className="w-full flex items-center justify-center gap-3 py-3.5 px-5 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-lg transition-colors border border-slate-300 text-sm shadow-sm disabled:opacity-60"
+  >
+    <GoogleIcon />
+    {loading ? 'Connecting…' : children}
+  </button>
+);
 
-// This component must be rendered inside <GoogleOAuthProvider>.
-// main.jsx always renders that provider (with a placeholder ID when no real ID is configured).
-// When no real client ID is set, we skip calling the Google OAuth flow and use demo mode instead.
-export default function GoogleLoginButton({ onSuccess, onError, children }) {
+// Only rendered when GoogleOAuthProvider is in the tree (i.e. VITE_GOOGLE_CLIENT_ID is set).
+// useGoogleLogin is called inside this component so it only fires when the component is rendered.
+function RealGoogleButton({ onSuccess, onError, children }) {
   const [loading, setLoading] = useState(false);
-  const hasRealClientId = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   const triggerOAuth = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -44,27 +47,33 @@ export default function GoogleLoginButton({ onSuccess, onError, children }) {
     },
   });
 
+  return (
+    <Btn loading={loading} onClick={() => { setLoading(true); triggerOAuth(); }}>
+      {children}
+    </Btn>
+  );
+}
+
+// Rendered when no client ID is configured — simulates a Google login for demo purposes.
+function DemoGoogleButton({ onSuccess, children }) {
+  const [loading, setLoading] = useState(false);
+
   const handleClick = async () => {
     setLoading(true);
-    if (!hasRealClientId) {
-      // Demo mode — simulate a Google login without hitting Google's servers
-      await new Promise((r) => setTimeout(r, 700));
-      setLoading(false);
-      onSuccess(DEMO_PROFILE);
-      return;
-    }
-    triggerOAuth();
+    await new Promise((r) => setTimeout(r, 700));
+    onSuccess({ given_name: 'Demo', family_name: 'User', email: 'demo@gmail.com', picture: null });
+    setLoading(false);
   };
 
-  return (
-    <button
-      type="button"
-      disabled={loading}
-      onClick={handleClick}
-      className="w-full flex items-center justify-center gap-3 py-3.5 px-5 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-lg transition-colors border border-slate-300 text-sm shadow-sm disabled:opacity-60"
-    >
-      <GoogleIcon />
-      {loading ? 'Connecting…' : children}
-    </button>
-  );
+  return <Btn loading={loading} onClick={handleClick}>{children}</Btn>;
+}
+
+// Exported component — renders RealGoogleButton only when GoogleOAuthProvider is present.
+// Both sub-components are in the same file so the import is always bundled,
+// but useGoogleLogin is only *called* when RealGoogleButton actually renders.
+export default function GoogleLoginButton({ onSuccess, onError, children }) {
+  if (import.meta.env.VITE_GOOGLE_CLIENT_ID) {
+    return <RealGoogleButton onSuccess={onSuccess} onError={onError}>{children}</RealGoogleButton>;
+  }
+  return <DemoGoogleButton onSuccess={onSuccess}>{children}</DemoGoogleButton>;
 }

@@ -81,10 +81,10 @@ const AppNav = ({ variant = 'dashboard' }) => {
             </button>
           )}
 
-          {/* AI Chat toggle */}
+          {/* AI Chat toggle — mobile only (desktop has permanent sidebar) */}
           <button
             onClick={toggleChat}
-            className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-text-secondary hover:text-white hover:bg-brand-slate-light/40 transition-colors text-xs font-semibold"
+            className="lg:hidden flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-text-secondary hover:text-white hover:bg-brand-slate-light/40 transition-colors text-xs font-semibold"
             title="Ask AI"
           >
             <MessageCircle size={17} />

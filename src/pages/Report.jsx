@@ -81,12 +81,12 @@ const getMockResponse = (question, policy) => {
 // ─── Agentic Task Modal ──────────────────────────────────────────────────────
 
 const AGENT_TASKS = (policy) => [
-  { id: 1, label: 'Reviewing policy documents and coverage details', duration: 1000 },
-  { id: 2, label: `Analyzing ${policy.carrier} carrier options and rates`, duration: 1400 },
-  { id: 3, label: 'Identifying highest-impact action items', duration: 1200 },
-  { id: 4, label: 'Drafting beneficiary update instructions', duration: 1600 },
-  { id: 5, label: 'Preparing conversion timeline and comparison', duration: 1300 },
-  { id: 6, label: 'Scheduling advisor consultation', duration: 900 },
+  { id: 1, label: 'Reading and parsing policy documents', duration: 1000 },
+  { id: 2, label: `Pulling current ${policy.carrier} rates and product options`, duration: 1400 },
+  { id: 3, label: 'Ranking action items by impact and urgency', duration: 1200 },
+  { id: 4, label: 'Drafting beneficiary designation update letter', duration: 1600 },
+  { id: 5, label: 'Building conversion cost comparison analysis', duration: 1300 },
+  { id: 6, label: 'Generating your personalized action report', duration: 900 },
 ];
 
 const AgentModal = ({ policy, onClose }) => {
@@ -169,10 +169,10 @@ const AgentModal = ({ policy, onClose }) => {
             </div>
             <h3 className="text-white font-bold text-xl mb-2">All Done!</h3>
             <p className="text-text-secondary text-sm mb-6">
-              Your action plan is ready. We've prepared beneficiary update forms, a conversion timeline, and scheduled a call with your advisor for <strong className="text-white">Thursday, May 7 at 2:00 PM</strong>.
+              Done. We've drafted your beneficiary update letter, built a side-by-side conversion cost analysis, and compiled a prioritized action report — all sent to your email.
             </p>
             <div className="grid grid-cols-3 gap-3 mb-6">
-              {[['6', 'Actions taken'], ['1', 'Advisor scheduled'], ['3', 'Docs prepared']].map(([v, l]) => (
+              {[['6', 'Items analyzed'], ['3', 'Docs drafted'], ['1', 'Report sent']].map(([v, l]) => (
                 <div key={l} className="bg-brand-navy rounded-xl p-3 border border-brand-slate-light">
                   <p className="text-accent-amber font-bold text-xl">{v}</p>
                   <p className="text-text-muted text-[11px] mt-0.5">{l}</p>

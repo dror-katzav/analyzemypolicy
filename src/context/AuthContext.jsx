@@ -20,6 +20,17 @@ export const AuthProvider = ({ children }) => {
     return { ok: true };
   };
 
+  const googleLogin = (profile) => {
+    const u = {
+      email: profile.email,
+      firstName: profile.given_name || profile.name?.split(' ')[0] || 'User',
+      lastName: profile.family_name || profile.name?.split(' ').slice(1).join(' ') || '',
+      picture: profile.picture || null,
+      isGoogle: true,
+    };
+    persist(u);
+  };
+
   const signup = (firstName, lastName, email, password) => {
     if (!firstName || !email || !password)
       return { ok: false, error: 'Please fill in all required fields.' };
@@ -46,7 +57,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, loginAsGuest, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, googleLogin, signup, loginAsGuest, logout, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

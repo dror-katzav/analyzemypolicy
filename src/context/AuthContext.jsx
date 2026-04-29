@@ -30,6 +30,11 @@ export const AuthProvider = ({ children }) => {
     return { ok: true };
   };
 
+  const loginAsGuest = () => {
+    const u = { email: 'guest@demo.analyzemypolicy.com', firstName: 'Guest', lastName: '', isGuest: true };
+    persist(u);
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('amp_user');
@@ -41,7 +46,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, signup, loginAsGuest, logout, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

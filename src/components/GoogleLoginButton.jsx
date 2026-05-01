@@ -54,26 +54,53 @@ function RealGoogleButton({ onSuccess, onError, children }) {
   );
 }
 
-// Rendered when no client ID is configured — simulates a Google login for demo purposes.
-function DemoGoogleButton({ onSuccess, children }) {
-  const [loading, setLoading] = useState(false);
+// Shown when VITE_GOOGLE_CLIENT_ID is not configured.
+function SetupNotice() {
+  const [open, setOpen] = useState(false);
 
-  const handleClick = async () => {
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 700));
-    onSuccess({ given_name: 'Demo', family_name: 'User', email: 'demo@gmail.com', picture: null });
-    setLoading(false);
-  };
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="w-full flex items-center justify-center gap-3 py-3.5 px-5 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-lg transition-colors border border-slate-300 text-sm shadow-sm"
+      >
+        <GoogleIcon />
+        Continue with Google
+      </button>
 
-  return <Btn loading={loading} onClick={handleClick}>{children}</Btn>;
+      {open && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setOpen(false)}>
+          <div
+            className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-slate-900 font-bold text-base mb-2">Google OAuth not configured</h3>
+            <p className="text-slate-600 text-sm mb-4 leading-relaxed">
+              To enable real Google sign-in, add your Client ID to <code className="bg-slate-100 px-1.5 py-0.5 rounded text-xs font-mono">.env</code>:
+            </p>
+            <pre className="bg-slate-900 text-green-400 text-xs rounded-lg p-3 mb-4 overflow-x-auto font-mono">
+              {`VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com`}
+            </pre>
+            <p className="text-slate-500 text-xs mb-4 leading-relaxed">
+              Create a project at <span className="text-blue-600">console.cloud.google.com</span>, enable the OAuth consent screen, and add <code className="bg-slate-100 px-1 rounded">http://localhost:5174</code> as an authorized JavaScript origin.
+            </p>
+            <button
+              onClick={() => setOpen(false)}
+              className="w-full py-2.5 bg-slate-900 hover:bg-slate-700 text-white font-semibold rounded-lg text-sm transition-colors"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
 
-// Exported component — renders RealGoogleButton only when GoogleOAuthProvider is present.
-// Both sub-components are in the same file so the import is always bundled,
-// but useGoogleLogin is only *called* when RealGoogleButton actually renders.
 export default function GoogleLoginButton({ onSuccess, onError, children }) {
   if (import.meta.env.VITE_GOOGLE_CLIENT_ID) {
     return <RealGoogleButton onSuccess={onSuccess} onError={onError}>{children}</RealGoogleButton>;
   }
-  return <DemoGoogleButton onSuccess={onSuccess}>{children}</DemoGoogleButton>;
+  return <SetupNotice />;
 }

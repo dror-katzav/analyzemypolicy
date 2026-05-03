@@ -1,14 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Shield, DollarSign, Calendar, CheckCircle, Clock,
-  TrendingUp, MessageCircle, Send, Mail, Zap, ChevronDown,
-  ChevronUp, Bot, User, Info, X, AlertTriangle, Sparkles,
+  TrendingUp, Mail, Zap, ChevronDown,
+  ChevronUp, Bot, Info, X, AlertTriangle, Sparkles,
 } from 'lucide-react';
 import AppNav from '../components/AppNav';
 import { useAuth } from '../context/AuthContext';
 import { useAIChat } from '../context/AIChatContext';
-import { MOCK_POLICIES } from '../data/mockData';
+import { usePolicies } from '../context/PoliciesContext';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -59,23 +59,6 @@ const milestoneStyle = (type, isPast) => {
     endowment: { dot: 'bg-purple-500 border-purple-500', text: 'text-purple-400' },
   };
   return map[type] || { dot: 'bg-text-muted border-text-muted', text: 'text-text-muted' };
-};
-
-// ─── Mock AI responses ───────────────────────────────────────────────────────
-
-const getMockResponse = (question, policy) => {
-  const q = question.toLowerCase();
-  if (q.includes('cash value') || q.includes('cv'))
-    return `Your **${policy.name}** currently has an estimated cash value of **${fmt(policy.cashValue)}**. Based on your policy illustration, it's projected to reach approximately **$146K by 2030** and **$312K by 2040**. You can access this value through a policy loan (tax-free) or surrender — though surrendering ends your coverage.`;
-  if (q.includes('premium') || q.includes('payment'))
-    return `Your current premium is **$${policy.premium}/month** (${policy.premiumFrequency}). Your next payment is due **${fmtDate(policy.nextPremiumDate)}**. Compared to similar profiles in our database, your premium is within a normal range for a ${policy.type} policy with this face amount.`;
-  if (q.includes('beneficiar'))
-    return `Your policy lists **${policy.beneficiary}** as the primary beneficiary. We recommend reviewing this annually — especially after life changes like marriage, divorce, or a new child. Updating a beneficiary is typically free and takes under 10 minutes with your carrier.`;
-  if (q.includes('convert') || q.includes('conversion'))
-    return `This is an important opportunity. Your policy's conversion window opens **April 2030**. Converting before any health changes allows you to lock in your current health classification — meaning no new medical exam, and permanent coverage that builds cash value. The longer you wait, the more expensive it becomes.`;
-  if (q.includes('score') || q.includes('grade'))
-    return `Your policy score of **${policy.score}/100** reflects coverage adequacy, premium efficiency, beneficiary status, and milestone alignment. The main item holding your score back is ${policy.opportunities[0]?.title.toLowerCase() || 'a pending review item'}. Addressing that could push your score above 80.`;
-  return `That's a great question about your **${policy.name}**. Based on your policy data, here's what I can tell you: your coverage of **${fmt(policy.faceAmount)}** is active and current. The most important action item right now is: *${policy.opportunities[0]?.title || 'reviewing your policy'}*. Would you like me to walk you through the options?`;
 };
 
 // ─── Agentic Task Modal ──────────────────────────────────────────────────────
@@ -292,44 +275,12 @@ const Report = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { open: openChat } = useAIChat();
-  const policy = MOCK_POLICIES.find((p) => p.id === id) || MOCK_POLICIES[0];
+  const { policies } = usePolicies();
+  const policy = policies.find((p) => p.id === id) || policies[0];
 
-  const [activeTab, setActiveTab] = useState('analysis');
   const [expandedOpp, setExpandedOpp] = useState(null);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showAgentModal, setShowAgentModal] = useState(false);
-  const [chatMessages, setChatMessages] = useState([
-    { role: 'model', content: `Hi! I've reviewed your **${policy.name}** policy. I can answer questions about your coverage, cash value, premiums, milestones, or options. What would you like to know?` },
-  ]);
-  const [chatInput, setChatInput] = useState('');
-  const [chatLoading, setChatLoading] = useState(false);
-  const chatBottomRef = useRef(null);
-
-  useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages]);
-
-  const handleChatSend = () => {
-    if (!chatInput.trim()) return;
-    const userMsg = { role: 'user', content: chatInput };
-    setChatMessages((prev) => [...prev, userMsg]);
-    setChatInput('');
-    setChatLoading(true);
-    setTimeout(() => {
-      setChatMessages((prev) => [...prev, { role: 'model', content: getMockResponse(userMsg.content, policy) }]);
-      setChatLoading(false);
-    }, 1200);
-  };
-
-  const sendQuestion = (q) => {
-    const userMsg = { role: 'user', content: q };
-    setChatMessages((prev) => [...prev, userMsg]);
-    setChatLoading(true);
-    setTimeout(() => {
-      setChatMessages((prev) => [...prev, { role: 'model', content: getMockResponse(q, policy) }]);
-      setChatLoading(false);
-    }, 1200);
-  };
 
   const severityBadge = (severity) => {
     if (severity === 'high') return 'bg-red-500/10 text-red-400 border-red-500/20';
@@ -392,41 +343,24 @@ const Report = () => {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tab bar — Analysis only, with Ask AI shortcut on right */}
       <div className="border-b border-brand-slate-light sticky top-[60px] bg-brand-dark z-30">
-        <div className="max-w-5xl mx-auto px-4 md:px-8 flex gap-0">
-          {[
-            { key: 'analysis', label: 'Analysis', icon: <Shield size={14} /> },
-            { key: 'chat', label: 'Ask AI', icon: <MessageCircle size={14} /> },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-4 md:px-5 py-3.5 md:py-4 text-sm font-semibold border-b-2 transition-colors ${
-                activeTab === tab.key
-                  ? 'border-accent-amber text-accent-amber'
-                  : 'border-transparent text-text-secondary hover:text-white'
-              }`}
-            >
-              {tab.icon} {tab.label}
-            </button>
-          ))}
-          {/* Global AI chat shortcut */}
+        <div className="max-w-5xl mx-auto px-4 md:px-8 flex items-center">
+          <span className="flex items-center gap-2 px-4 md:px-5 py-3.5 md:py-4 text-sm font-semibold border-b-2 border-accent-amber text-accent-amber">
+            <Shield size={14} /> Analysis
+          </span>
           <button
             onClick={openChat}
-            className="ml-auto flex items-center gap-1.5 px-3 py-3.5 text-xs text-text-secondary hover:text-accent-amber transition-colors font-medium"
+            className="ml-auto flex items-center gap-1.5 px-3 py-3.5 text-xs text-text-secondary hover:text-accent-amber transition-colors font-medium lg:hidden"
           >
-            <Bot size={14} /> All Policies
+            <Bot size={14} /> Ask AI
           </button>
         </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 max-w-5xl mx-auto w-full px-4 md:px-8 py-6 md:py-8 pb-28 md:pb-32">
-
-        {/* ── ANALYSIS TAB ── */}
-        {activeTab === 'analysis' && (
-          <div className="space-y-6 md:space-y-8">
+        <div className="space-y-6 md:space-y-8">
 
             {/* Summary */}
             <div className="bg-brand-slate border border-brand-slate-light rounded-xl p-5 md:p-6">
@@ -546,93 +480,11 @@ const Report = () => {
               </div>
             </div>
 
-          </div>
-        )}
-
-        {/* ── CHAT TAB ── */}
-        {activeTab === 'chat' && (
-          <div className="flex flex-col">
-            <div className="bg-brand-slate border border-brand-slate-light rounded-xl p-4 mb-4 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-accent-amber/20 flex items-center justify-center flex-shrink-0">
-                <Bot size={18} className="text-accent-amber" />
-              </div>
-              <div className="flex-1">
-                <p className="text-white font-semibold text-sm">AI Policy Advisor</p>
-                <p className="text-text-muted text-xs">Ask me anything about your {policy.shortName} policy</p>
-              </div>
-              <span className="flex items-center gap-1 text-green-400 text-xs flex-shrink-0">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>Online
-              </span>
-            </div>
-
-            <div className="flex flex-wrap gap-2 mb-4">
-              {['What is my cash value?', 'When is my next premium?', 'Should I convert this policy?', 'How can I improve my score?'].map((q) => (
-                <button
-                  key={q}
-                  className="px-3 py-1.5 bg-brand-slate border border-brand-slate-light text-text-secondary hover:text-white hover:border-accent-amber/40 text-xs rounded-full transition-colors"
-                  onClick={() => { setActiveTab('chat'); sendQuestion(q); }}
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
-
-            <div className="overflow-y-auto space-y-4 pr-1" style={{ minHeight: '300px', maxHeight: '480px' }}>
-              {chatMessages.map((msg, i) => (
-                <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.role === 'user' ? 'bg-accent-amber text-brand-dark' : 'bg-brand-slate border border-brand-slate-light text-text-secondary'}`}>
-                    {msg.role === 'user' ? <User size={14} /> : <Bot size={14} />}
-                  </div>
-                  <div className={`max-w-[80%] p-4 rounded-2xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-accent-amber/15 text-accent-amber border border-accent-amber/20 rounded-tr-none' : 'bg-brand-slate text-text-primary border border-brand-slate-light rounded-tl-none'}`}>
-                    {msg.content.split(/(\*\*[^*]+\*\*)/).map((part, j) =>
-                      part.startsWith('**') && part.endsWith('**')
-                        ? <strong key={j} className="text-white font-bold">{part.slice(2, -2)}</strong>
-                        : <span key={j}>{part}</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {chatLoading && (
-                <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-brand-slate border border-brand-slate-light flex items-center justify-center flex-shrink-0">
-                    <Bot size={14} className="text-text-secondary" />
-                  </div>
-                  <div className="p-4 bg-brand-slate border border-brand-slate-light rounded-2xl rounded-tl-none flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-text-muted animate-bounce" />
-                    <span className="w-2 h-2 rounded-full bg-text-muted animate-bounce" style={{ animationDelay: '0.15s' }} />
-                    <span className="w-2 h-2 rounded-full bg-text-muted animate-bounce" style={{ animationDelay: '0.3s' }} />
-                  </div>
-                </div>
-              )}
-              <div ref={chatBottomRef} />
-            </div>
-
-            <div className="mt-4 flex items-center gap-2 bg-brand-slate border border-brand-slate-light rounded-xl p-2 pl-4 focus-within:border-accent-amber/60 transition-colors">
-              <input
-                type="text"
-                placeholder={`Ask about your ${policy.shortName} policy…`}
-                className="flex-1 bg-transparent outline-none text-white text-sm"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleChatSend()}
-              />
-              <button
-                disabled={!chatInput.trim() || chatLoading}
-                onClick={handleChatSend}
-                className="w-9 h-9 rounded-lg bg-accent-amber disabled:bg-brand-slate-light text-brand-dark disabled:text-text-muted flex items-center justify-center transition-colors"
-              >
-                <Send size={15} className="translate-x-[1px]" />
-              </button>
-            </div>
-            <p className="text-center text-[10px] text-text-muted mt-2">
-              AI responses are informational only — not financial or legal advice.
-            </p>
-          </div>
-        )}
+        </div>
       </div>
 
       {/* ── Sticky CTA bar ── */}
-      <div className="fixed bottom-0 left-0 right-0 bg-brand-slate border-t border-brand-slate-light z-40">
+      <div className="fixed bottom-0 left-0 right-0 lg:right-[300px] bg-brand-slate border-t border-brand-slate-light z-40">
         <div className="max-w-5xl mx-auto px-4 md:px-8 py-3 md:py-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:gap-3">
           <button
             className="flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-brand-dark border border-brand-slate-light hover:border-accent-amber/40 text-white font-semibold rounded-lg text-sm transition-colors"

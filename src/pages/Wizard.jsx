@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Shield, Send, Share, Clock, DollarSign, AlertTriangle, Calendar, MessageCircle, X, Paperclip } from 'lucide-react';
 import VirtualAdvisorModal from '../components/VirtualAdvisorModal';
 import { parsePolicy } from '../utils/policyParser';
+import { usePolicies } from '../context/PoliciesContext';
 
 const LIFE_CHANGES = [
   'Marriage', 'Divorce', 'New child', 'Income change', 
@@ -11,6 +12,7 @@ const LIFE_CHANGES = [
 
 const Wizard = () => {
   const navigate = useNavigate();
+  const { addPolicy } = usePolicies();
   const bottomRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -261,18 +263,58 @@ const Wizard = () => {
   const showResults = () => {
     setStep(3);
     setLoadingStep(6);
-    
+
+    // Build and save the analyzed policy
+    const newPolicy = {
+      id: 'pol-' + Date.now(),
+      name: uploadedFile ? uploadedFile.name.replace(/\.[^.]+$/, '') : 'Demo Policy',
+      shortName: 'Uploaded Policy',
+      type: 'Term Life',
+      carrier: 'Your Carrier',
+      carrierInitials: 'UP',
+      carrierColor: '#7c3aed',
+      faceAmount: 2000000,
+      premium: 320,
+      premiumFrequency: 'monthly',
+      nextPremiumDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+      issueDate: new Date().toISOString().slice(0, 10),
+      insured: 'Policy Holder',
+      beneficiary: 'Beneficiary',
+      cashValue: 0,
+      deathBenefit: 2000000,
+      score: 72,
+      scoreLabel: 'Needs Review',
+      scoreColor: 'amber',
+      status: 'active',
+      statusLabel: 'Active',
+      summary: 'Policy analyzed via AnalyzeMyPolicy. Coverage aligns with your income replacement needs. One beneficiary review item identified.',
+      strengths: [
+        'Coverage amount aligns with income replacement needs',
+        'Term covers key wealth-building years',
+      ],
+      opportunities: [
+        { id: 'op-wiz-1', severity: 'medium', title: 'Review Beneficiary Designations', description: 'Your beneficiary designations may need updating to reflect current estate plans.', cta: 'Review Now' },
+        { id: 'op-wiz-2', severity: 'low', title: 'Premium Benchmarking', description: 'Comparable policies may offer similar coverage at a lower premium. Consider getting a comparison quote.', cta: 'Get Quotes' },
+      ],
+      milestones: [
+        { id: 'ms-wiz-1', date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10), isPast: false, isUrgent: true, type: 'premium', label: 'First Premium Due', detail: 'Review and confirm your first premium payment.' },
+        { id: 'ms-wiz-2', date: new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10), isPast: false, type: 'review', label: 'Annual Policy Review', detail: 'Review coverage adequacy and beneficiary designations.' },
+      ],
+      cashValueSeries: [],
+    };
+    addPolicy(newPolicy);
+
     setMessages(prev => [
       ...prev.filter(m => !m.isLoadingSim),
-      { id: Date.now(), sender: 'ai', text: "Analysis complete! Here are your results. 🎉 Feel free to ask me any questions about what you see." },
+      { id: Date.now(), sender: 'ai', text: "Analysis complete! Here are your results. Feel free to ask me any questions about what you see." },
       { id: Date.now()+1, sender: 'ai', isResultsPanel: true }
     ]);
-    
+
     setTimeout(() => {
       setStep(4);
       setMessages(prev => [
         ...prev,
-        { id: Date.now()+2, sender: 'ai', isCTA: true }
+        { id: Date.now()+2, sender: 'ai', isCTA: true, policyId: newPolicy.id }
       ]);
     }, 1500);
   };
@@ -469,21 +511,24 @@ const Wizard = () => {
               {msg.isCTA && (
                 <div className="w-full flex flex-col items-center">
                   <div className="bg-brand-navy p-8 text-white rounded-xl w-full text-center border border-brand-slate-light shadow-2xl">
-                    <h3 className="text-2xl font-bold mb-2">Speak with a Wealth Advisor</h3>
-                    <p className="text-text-secondary mb-6 text-sm">Connect with a licensed advisor who specializes in high-value policies and estate planning.</p>
-                    <button className="w-full py-3 px-6 bg-accent-amber hover:bg-accent-amber-hover text-brand-dark font-bold flex justify-center items-center gap-2 rounded-lg transition-colors border border-transparent" onClick={() => setShowSchedule(true)}>
-                      <Calendar size={20} /> Schedule a Call
-                    </button>
-                    <button 
-                      className="w-full mt-4 py-3 px-6 bg-transparent hover:bg-brand-slate text-white font-bold flex gap-2 justify-center items-center rounded-lg transition-colors border border-brand-slate-light"
-                      onClick={() => setShowVirtualAdvisor(true)}
+                    <h3 className="text-2xl font-bold mb-2">Your Policy Has Been Added</h3>
+                    <p className="text-text-secondary mb-6 text-sm">Your analysis is saved to your dashboard. View the full report or return to your portfolio.</p>
+                    <button
+                      className="w-full py-3 px-6 bg-accent-amber hover:bg-accent-amber-hover text-brand-dark font-bold flex justify-center items-center gap-2 rounded-lg transition-colors border border-transparent"
+                      onClick={() => navigate(`/report/${msg.policyId}`)}
                     >
-                      <MessageCircle size={20} /> Virtual Advisor
+                      View Full Report
+                    </button>
+                    <button
+                      className="w-full mt-4 py-3 px-6 bg-transparent hover:bg-brand-slate text-white font-bold flex gap-2 justify-center items-center rounded-lg transition-colors border border-brand-slate-light"
+                      onClick={() => navigate('/dashboard')}
+                    >
+                      Go to Dashboard
                     </button>
                   </div>
-                  
+
                   <div className="flex flex-wrap gap-2 justify-center mt-4">
-                    {['What do my results mean?', 'How can I improve my score?', 'Schedule an advisor call'].map(txt => (
+                    {['What do my results mean?', 'How can I improve my score?', 'What should I do next?'].map(txt => (
                       <button key={txt} className="bg-transparent border border-brand-slate-light text-text-secondary px-4 py-2 rounded-full text-sm cursor-pointer transition-colors hover:bg-brand-slate hover:text-white" onClick={() => setInputValue(txt)}>
                         {txt}
                       </button>

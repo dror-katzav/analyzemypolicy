@@ -8,6 +8,7 @@ import Documents from './pages/Documents';
 import Advisor from './pages/Advisor';
 import { useAuth } from './context/AuthContext';
 import { AIChatProvider } from './context/AIChatContext';
+import { PoliciesProvider } from './context/PoliciesContext';
 import AIChatSidebar from './components/AIChatSidebar';
 
 const ProtectedRoute = ({ children }) => {
@@ -25,6 +26,7 @@ const AuthSidebar = () => {
 
 function App() {
   return (
+    <PoliciesProvider>
     <AIChatProvider>
       <Router>
         <Routes>
@@ -38,6 +40,7 @@ function App() {
         <AuthSidebar />
       </Router>
     </AIChatProvider>
+    </PoliciesProvider>
   );
 }
 

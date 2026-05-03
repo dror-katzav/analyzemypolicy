@@ -15,12 +15,8 @@ import {
 } from 'lucide-react';
 import AppNav from '../components/AppNav';
 import { useAuth } from '../context/AuthContext';
-import {
-  MOCK_POLICIES,
-  PORTFOLIO_SUMMARY,
-  UPCOMING_EVENTS,
-  PORTFOLIO_CASH_VALUE,
-} from '../data/mockData';
+import { usePolicies } from '../context/PoliciesContext';
+import { PORTFOLIO_SUMMARY } from '../data/mockData';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -174,8 +170,8 @@ const scoreBreakdownItems = [
   { label: 'Policy Structure', value: 79, color: '#f59e0b' },
 ];
 
-const PortfolioScoreModal = ({ score, onClose, onViewPolicy }) => {
-  const reviewItems = MOCK_POLICIES.flatMap((p) =>
+const PortfolioScoreModal = ({ score, policies, onClose, onViewPolicy }) => {
+  const reviewItems = policies.flatMap((p) =>
     p.opportunities.filter((o) => o.severity === 'high' || o.severity === 'medium').map((o) => ({
       ...o,
       policyName: p.shortName,
@@ -261,16 +257,41 @@ const PortfolioScoreModal = ({ score, onClose, onViewPolicy }) => {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { totalCoverage, totalMonthlyPremium, estimatedCashValue, portfolioScore } = PORTFOLIO_SUMMARY;
+  const {
+    policies,
+    portfolioScore,
+    totalCoverage,
+    totalMonthlyPremium,
+    estimatedCashValue,
+    upcomingEvents,
+    nextPremium,
+    cashValueHistory,
+  } = usePolicies();
   const [showScoreModal, setShowScoreModal] = useState(false);
 
   const firstName = user?.firstName ?? 'there';
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const daysAway = (iso) => {
+    const d = new Date(iso); d.setHours(0, 0, 0, 0);
+    return Math.round((d - today) / 86400000);
+  };
+  const nextDueLabel = (() => {
+    if (!nextPremium) return 'No upcoming';
+    const d = new Date(nextPremium.date);
+    const days = daysAway(nextPremium.date);
+    if (days <= 0) return 'Due today';
+    return `Next due ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+  })();
 
   const kpiCards = [
     {
       label: 'Total Coverage',
       value: fmt(totalCoverage),
-      sub: `${MOCK_POLICIES.length} active policies`,
+      sub: `${policies.length} active polic${policies.length === 1 ? 'y' : 'ies'}`,
       icon: <Shield size={20} className="text-blue-400" />,
       iconBg: 'bg-blue-500/10',
     },
@@ -284,7 +305,7 @@ const Dashboard = () => {
     {
       label: 'Monthly Premium',
       value: `$${totalMonthlyPremium.toLocaleString()}`,
-      sub: 'Next due Apr 28',
+      sub: nextDueLabel,
       icon: <DollarSign size={20} className="text-accent-amber" />,
       iconBg: 'bg-amber-500/10',
     },
@@ -304,7 +325,7 @@ const Dashboard = () => {
       {/* Page header */}
       <div className="px-4 md:px-8 py-6 md:py-8 border-b border-brand-slate-light">
         <h1 className="text-xl md:text-2xl font-bold text-white">
-          Good morning, {firstName} 👋
+          {greeting}, {firstName}
         </h1>
         <p className="text-text-secondary mt-1 text-sm">
           Your policy portfolio is up to date. One action item needs attention.
@@ -371,7 +392,7 @@ const Dashboard = () => {
                 </span>
               </div>
             </div>
-            <CashValueChart data={PORTFOLIO_CASH_VALUE} />
+            <CashValueChart data={cashValueHistory} />
           </div>
 
           <div className="bg-brand-slate border border-brand-slate-light rounded-xl p-4 md:p-6">
@@ -380,14 +401,14 @@ const Dashboard = () => {
               <Calendar size={16} className="text-text-muted" />
             </div>
             <div className="space-y-2 md:space-y-3">
-              {UPCOMING_EVENTS.map((ev) => (
+              {upcomingEvents.map((ev) => (
                 <div
                   key={ev.id}
                   className="flex items-start gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg border border-brand-slate-light hover:border-accent-amber/40 cursor-pointer transition-colors group"
                   onClick={() => navigate(`/report/${ev.policyId}`)}
                 >
                   <div className={`mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase flex-shrink-0 ${urgencyBadge(ev.urgency)}`}>
-                    {ev.daysAway === 0 ? 'TODAY' : `${ev.daysAway}d`}
+                    {daysAway(ev.date) <= 0 ? 'TODAY' : `${daysAway(ev.date)}d`}
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs md:text-sm text-white font-medium leading-snug group-hover:text-accent-amber transition-colors truncate">
@@ -405,7 +426,7 @@ const Dashboard = () => {
         <div>
           <h2 className="text-white font-bold mb-3 md:mb-4 text-sm md:text-base">Your Policies</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-            {MOCK_POLICIES.map((policy) => {
+            {policies.map((policy) => {
               const scoreColor = policy.score >= 80 ? 'text-green-400' : policy.score >= 65 ? 'text-accent-amber' : 'text-red-400';
               const urgentMilestone = policy.milestones.find((m) => m.isUrgent);
               return (
@@ -492,6 +513,7 @@ const Dashboard = () => {
       {showScoreModal && (
         <PortfolioScoreModal
           score={portfolioScore}
+          policies={policies}
           onClose={() => setShowScoreModal(false)}
           onViewPolicy={(id) => navigate(`/report/${id}`)}
         />

@@ -6,7 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAIChat } from '../context/AIChatContext';
 
 const NAV_LINKS = [
-  { label: 'Portfolio', path: '/dashboard' },
+  { label: 'Dashboard', path: '/dashboard' },
   { label: 'Documents', path: '/documents' },
   { label: 'Advisor', path: '/advisor' },
 ];

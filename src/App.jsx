@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Landing from './pages/Landing';
 import Wizard from './pages/Wizard';
 import Dashboard from './pages/Dashboard';
@@ -10,6 +10,23 @@ import { useAuth } from './context/AuthContext';
 import { AIChatProvider } from './context/AIChatContext';
 import { PoliciesProvider } from './context/PoliciesContext';
 import AIChatSidebar from './components/AIChatSidebar';
+
+const PAGE_TITLES = {
+  '/': 'AnalyzeMyPolicy — Institutional-Grade Policy Monitoring',
+  '/analyze': 'Analyze a Policy — AnalyzeMyPolicy',
+  '/dashboard': 'Dashboard — AnalyzeMyPolicy',
+  '/documents': 'Documents — AnalyzeMyPolicy',
+  '/advisor': 'Advisor — AnalyzeMyPolicy',
+};
+
+function TitleManager() {
+  const location = useLocation();
+  useEffect(() => {
+    const base = '/' + (location.pathname.split('/')[1] ?? '');
+    document.title = PAGE_TITLES[base] ?? PAGE_TITLES[location.pathname] ?? 'AnalyzeMyPolicy';
+  }, [location.pathname]);
+  return null;
+}
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -29,6 +46,7 @@ function App() {
     <PoliciesProvider>
     <AIChatProvider>
       <Router>
+        <TitleManager />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/analyze" element={<Wizard />} />

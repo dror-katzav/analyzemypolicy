@@ -160,7 +160,7 @@ const Landing = () => {
           {/* ── Home ── */}
           {authMode === 'none' && (
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 mb-1">Welcome back</h2>
+              <h2 className="text-2xl font-bold text-slate-900 mb-1">Welcome</h2>
               <p className="text-slate-500 text-sm mb-7">Access your policy dashboard or start a new analysis.</p>
 
               <GoogleLoginButton onSuccess={onGoogleSuccess} onError={(msg) => setError(msg)}>
@@ -173,7 +173,7 @@ const Landing = () => {
                 className="w-full py-3.5 px-5 bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold rounded-lg transition-colors text-sm"
                 onClick={() => setAuthMode('signin')}
               >
-                Sign In to My Account
+                Sign In with Email
               </button>
               <button
                 className="w-full mt-3 py-3.5 px-5 bg-white hover:bg-slate-50 text-slate-800 font-semibold rounded-lg transition-colors border border-slate-200 text-sm"

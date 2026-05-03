@@ -161,6 +161,74 @@ const urgencyIcon = (urgency) => {
   return <CheckCircle size={14} className="text-text-muted" />;
 };
 
+// ─── Premium Payment Modal ───────────────────────────────────────────────────
+
+const PremiumModal = ({ nextPremium, policies, onClose }) => {
+  const policy = policies.find((p) => p.shortName === nextPremium?.policyName) ?? policies[0];
+  const payDate = nextPremium ? new Date(nextPremium.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : '—';
+
+  return (
+    <div className="fixed inset-0 bg-brand-dark/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-brand-slate border border-brand-slate-light rounded-2xl w-full max-w-md relative">
+        <button className="absolute top-4 right-4 text-text-muted hover:text-white" onClick={onClose}>
+          <X size={20} />
+        </button>
+
+        <div className="p-6 border-b border-brand-slate-light">
+          <h3 className="text-white font-bold text-lg">Upcoming Premium Payment</h3>
+          <p className="text-text-secondary text-sm mt-1">
+            Payment due for <span className="text-accent-amber font-semibold">{nextPremium?.policyName ?? policy?.shortName}</span>
+          </p>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div className="flex justify-between items-center p-4 bg-brand-navy rounded-xl border border-brand-slate-light">
+            <div>
+              <p className="text-text-muted text-xs uppercase font-semibold tracking-wider mb-1">Amount Due</p>
+              <p className="text-white font-bold text-2xl">${nextPremium?.amount?.toLocaleString() ?? '—'}/mo</p>
+            </div>
+            <div className="text-right">
+              <p className="text-text-muted text-xs uppercase font-semibold tracking-wider mb-1">Due Date</p>
+              <p className="text-accent-amber font-semibold text-sm">{payDate}</p>
+            </div>
+          </div>
+
+          {policy && (
+            <div className="space-y-2">
+              <p className="text-text-muted text-xs uppercase font-semibold tracking-wider">Carrier Contact</p>
+              <div className="p-3 bg-brand-navy rounded-lg border border-brand-slate-light text-sm">
+                <p className="text-white font-semibold">{policy.carrier}</p>
+                <p className="text-text-secondary text-xs mt-1">Pay online at your carrier's member portal, or call the number on your policy documents.</p>
+              </div>
+            </div>
+          )}
+
+          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-300">
+            <span className="font-semibold">Tip:</span> Set up autopay through your carrier to avoid missed payments and potential lapse.
+          </div>
+        </div>
+
+        <div className="px-6 pb-6 flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 border border-brand-slate-light text-text-secondary hover:text-white rounded-lg text-sm font-semibold transition-colors"
+          >
+            Close
+          </button>
+          {policy && (
+            <button
+              onClick={() => { onClose(); window.location.href = `/report/${policy.id}`; }}
+              className="flex-1 py-2.5 bg-accent-amber hover:bg-accent-amber-hover text-brand-dark rounded-lg text-sm font-bold transition-colors"
+            >
+              View Policy →
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── Portfolio Score Modal ───────────────────────────────────────────────────
 
 const scoreBreakdownItems = [
@@ -268,6 +336,7 @@ const Dashboard = () => {
     cashValueHistory,
   } = usePolicies();
   const [showScoreModal, setShowScoreModal] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   const firstName = user?.firstName ?? 'there';
 
@@ -306,6 +375,7 @@ const Dashboard = () => {
       label: 'Monthly Premium',
       value: `$${totalMonthlyPremium.toLocaleString()}`,
       sub: nextDueLabel,
+      subAlert: nextPremium && daysAway(nextPremium.date) <= 3,
       icon: <DollarSign size={20} className="text-accent-amber" />,
       iconBg: 'bg-amber-500/10',
     },
@@ -368,9 +438,18 @@ const Dashboard = () => {
               ) : (
                 <p className="text-white font-bold text-xl md:text-2xl leading-tight">{card.value}</p>
               )}
-              <p className={`text-xs mt-2 ${card.clickable ? 'text-accent-amber group-hover:underline' : 'text-text-muted'}`}>
+              <p className={`text-xs mt-2 ${card.clickable ? 'text-accent-amber group-hover:underline' : card.subAlert ? 'text-red-400 font-semibold' : 'text-text-muted'}`}>
                 {card.sub}
               </p>
+              {card.subAlert && (
+                <a
+                  href={`/report/${nextPremium?.policyName}`}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowPremiumModal(true); }}
+                  className="text-[10px] text-accent-amber hover:underline mt-0.5 block"
+                >
+                  View payment info →
+                </a>
+              )}
             </div>
           ))}
         </div>
@@ -411,10 +490,10 @@ const Dashboard = () => {
                     {daysAway(ev.date) <= 0 ? 'TODAY' : `${daysAway(ev.date)}d`}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs md:text-sm text-white font-medium leading-snug group-hover:text-accent-amber transition-colors truncate">
+                    <p className="text-xs md:text-sm text-white font-medium leading-snug group-hover:text-accent-amber transition-colors">
                       {ev.label}
                     </p>
-                    <p className="text-xs text-text-muted mt-0.5 truncate">{ev.detail}</p>
+                    <p className="text-xs text-text-muted mt-0.5">{ev.detail}</p>
                   </div>
                 </div>
               ))}
@@ -450,17 +529,23 @@ const Dashboard = () => {
                         <p className="text-text-muted text-xs mt-0.5">{policy.type} · {policy.carrier}</p>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
+                    <div className="flex flex-col items-end gap-1 text-right">
                       <ScoreRing score={policy.score} size={40} />
                       <span className={`text-[10px] font-bold ${scoreColor}`}>{policy.scoreLabel}</span>
+                      {policy.score < 80 && policy.opportunities[0] && (
+                        <span className="text-[9px] text-text-muted max-w-[90px] leading-tight">{policy.opportunities[0].title}</span>
+                      )}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 md:gap-3 mb-4 md:mb-5">
-                    {[['Coverage', fmt(policy.faceAmount)], ['Premium', `$${policy.premium}/mo`], ['Cash Value', policy.cashValue > 0 ? fmt(policy.cashValue) : '—']].map(([label, val]) => (
+                    {[['Coverage', fmt(policy.faceAmount)], ['Premium', `$${policy.premium}/mo`], ['Cash Value', policy.cashValue > 0 ? fmt(policy.cashValue) : policy.type === 'Term Life' ? 'N/A' : '—']].map(([label, val]) => (
                       <div key={label}>
                         <p className="text-text-muted text-[10px] uppercase font-semibold tracking-wider mb-1">{label}</p>
-                        <p className="text-white font-bold text-sm">{val}</p>
+                        <p className={`font-bold text-sm ${val === 'N/A' ? 'text-text-muted' : 'text-white'}`}>{val}</p>
+                        {label === 'Cash Value' && val === 'N/A' && (
+                          <p className="text-[9px] text-text-muted leading-tight mt-0.5">Term policies don't build cash value</p>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -474,7 +559,7 @@ const Dashboard = () => {
 
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-text-muted">
-                      {policy.opportunities.length} opportunity{policy.opportunities.length !== 1 ? 's' : ''} identified
+                      {policy.opportunities.length} {policy.opportunities.length === 1 ? 'opportunity' : 'opportunities'} identified
                     </span>
                     <span className="flex items-center gap-1 text-xs text-accent-amber font-semibold group-hover:translate-x-0.5 transition-transform">
                       View analysis <ChevronRight size={14} />
@@ -505,8 +590,9 @@ const Dashboard = () => {
       </div>
 
       <footer className="px-4 md:px-8 py-5 md:py-6 border-t border-brand-slate-light text-center text-xs text-text-muted">
-        🔒 Bank-grade encryption · SOC 2 compliant · Your data is never sold ·{' '}
-        <span className="text-accent-amber">Powered by Atidot</span>
+        🔒 AES-256 encryption · TLS 1.3 in transit ·{' '}
+        <a href="/security" className="text-accent-amber hover:underline">SOC 2 Type II certified</a>
+        {' '}· Your data is never sold or shared
       </footer>
 
       {/* Portfolio Score Modal */}
@@ -516,6 +602,15 @@ const Dashboard = () => {
           policies={policies}
           onClose={() => setShowScoreModal(false)}
           onViewPolicy={(id) => navigate(`/report/${id}`)}
+        />
+      )}
+
+      {/* Premium Payment Modal */}
+      {showPremiumModal && (
+        <PremiumModal
+          nextPremium={nextPremium}
+          policies={policies}
+          onClose={() => setShowPremiumModal(false)}
         />
       )}
     </div>

@@ -48,6 +48,39 @@ const fmt = (n) =>
 
 const ACCEPTED = '.pdf,.jpg,.jpeg,.png,.doc,.docx';
 
+function DeleteConfirmModal({ doc, onConfirm, onCancel }) {
+  return (
+    <div className="fixed inset-0 bg-brand-dark/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-brand-slate border border-brand-slate-light rounded-2xl w-full max-w-sm">
+        <div className="p-6">
+          <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
+            <Trash2 size={22} className="text-red-400" />
+          </div>
+          <h3 className="text-white font-bold text-lg mb-1">Remove document?</h3>
+          <p className="text-text-secondary text-sm">
+            <span className="text-white font-semibold">{doc.name}</span> will be removed from your library.
+            This does not delete the associated policy from your dashboard.
+          </p>
+        </div>
+        <div className="px-6 pb-6 flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-2.5 border border-brand-slate-light text-text-secondary hover:text-white rounded-lg text-sm font-semibold transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-bold transition-colors"
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Documents() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -55,6 +88,7 @@ export default function Documents() {
   const [dragging, setDragging] = useState(false);
   const [processing, setProcessing] = useState(null); // { name, step, progress }
   const [parseError, setParseError] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // doc to confirm deletion
 
   const handleFiles = async (files) => {
     const file = files[0];
@@ -114,7 +148,10 @@ export default function Documents() {
     handleFiles(e.dataTransfer.files);
   };
 
-  const removeDoc = (id) => setDocs((prev) => prev.filter((d) => d.id !== id));
+  const removeDoc = (id) => {
+    setDocs((prev) => prev.filter((d) => d.id !== id));
+    setDeleteConfirm(null);
+  };
 
   const statusBadge = (status) => {
     if (status === 'analyzed')
@@ -273,7 +310,7 @@ export default function Documents() {
                     )}
                     <button
                       className="p-2 text-text-muted hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors"
-                      onClick={() => removeDoc(doc.id)}
+                      onClick={() => setDeleteConfirm(doc)}
                       title="Remove"
                     >
                       <Trash2 size={15} />
@@ -295,6 +332,14 @@ export default function Documents() {
         </div>
 
       </div>
+
+      {deleteConfirm && (
+        <DeleteConfirmModal
+          doc={deleteConfirm}
+          onConfirm={() => removeDoc(deleteConfirm.id)}
+          onCancel={() => setDeleteConfirm(null)}
+        />
+      )}
     </div>
   );
 }

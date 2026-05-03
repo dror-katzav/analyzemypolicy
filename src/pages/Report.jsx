@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Shield, DollarSign, Calendar, CheckCircle, Clock,
@@ -281,6 +281,10 @@ const Report = () => {
   const [expandedOpp, setExpandedOpp] = useState(null);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showAgentModal, setShowAgentModal] = useState(false);
+
+  useEffect(() => {
+    if (policy?.name) document.title = `${policy.name} — AnalyzeMyPolicy`;
+  }, [policy?.name]);
 
   const severityBadge = (severity) => {
     if (severity === 'high') return 'bg-red-500/10 text-red-400 border-red-500/20';

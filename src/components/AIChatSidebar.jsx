@@ -1,6 +1,30 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { X, Bot, User, Send, Plus, MessageSquare, Clock } from 'lucide-react';
 import { useAIChat } from '../context/AIChatContext';
+
+const CONTEXTUAL_PROMPTS = {
+  '/dashboard': [
+    'What is my portfolio score?',
+    'Which policy needs the most attention?',
+    'When is my next premium due?',
+  ],
+  '/documents': [
+    'What documents should I keep on file?',
+    'How do I read a policy illustration?',
+    'What is a declarations page?',
+  ],
+  '/advisor': [
+    'Should I convert my term policy to whole life?',
+    'How much life insurance do I need?',
+    'What is the difference between term and whole life?',
+  ],
+  default: [
+    'What is my portfolio score?',
+    'Should I convert my term policy?',
+    'When is my next premium?',
+  ],
+};
 
 const fmtDate = (iso) => {
   const d = new Date(iso);
@@ -24,10 +48,14 @@ const MarkdownText = ({ text }) =>
 // Inner panel — shared between desktop (always visible) and mobile (slide-over)
 function SidebarInner({ onClose }) {
   const { sessions, activeSid, setActiveSid, activeSession, newSession, sendMessage, isTyping } = useAIChat();
+  const location = useLocation();
   const [input, setInput] = useState('');
   const [showSessions, setShowSessions] = useState(false);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
+
+  const baseRoute = '/' + (location.pathname.split('/')[1] ?? '');
+  const suggestedPrompts = CONTEXTUAL_PROMPTS[baseRoute] ?? CONTEXTUAL_PROMPTS.default;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -138,7 +166,7 @@ function SidebarInner({ onClose }) {
           {/* Suggested prompts — only on fresh session */}
           {messages.length <= 1 && (
             <div className="px-3 pb-2 flex flex-col gap-1.5 flex-shrink-0">
-              {['What is my portfolio score?', 'Should I convert my term policy?', 'When is my next premium?'].map((q) => (
+              {suggestedPrompts.map((q) => (
                 <button
                   key={q}
                   onClick={() => sendMessage(q)}

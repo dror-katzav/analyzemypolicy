@@ -306,6 +306,14 @@ const Report = () => {
       {/* Policy hero */}
       <div className="bg-brand-slate border-b border-brand-slate-light">
         <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-8">
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-1.5 text-xs text-text-muted mb-4">
+            <button onClick={() => navigate('/dashboard')} className="hover:text-accent-amber transition-colors">Dashboard</button>
+            <span>/</span>
+            <button onClick={() => navigate('/dashboard')} className="hover:text-accent-amber transition-colors">Your Policies</button>
+            <span>/</span>
+            <span className="text-text-secondary font-medium truncate max-w-[180px]">{policy.name}</span>
+          </nav>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             <div className="flex items-center gap-4 flex-1">
               <div

@@ -3,6 +3,14 @@ import { useLocation } from 'react-router-dom';
 import { X, Bot, User, Send, Plus, MessageSquare, Clock } from 'lucide-react';
 import { useAIChat } from '../context/AIChatContext';
 
+const FOLLOW_UP_CHIPS = {
+  '/dashboard': ['What should I do first?', 'How is my score calculated?', 'Compare my policies'],
+  '/documents': ['What does this document mean?', 'How do I read my policy?', 'What should I keep?'],
+  '/report': ['What does this score mean?', 'How can I improve this?', 'What is my next step?'],
+  '/advisor': ['When should I convert my term?', 'How much coverage do I need?', 'Explain paid-up additions'],
+  default: ['Tell me more', 'What should I do next?', 'Explain that further'],
+};
+
 const CONTEXTUAL_PROMPTS = {
   '/dashboard': [
     'What is my portfolio score?',
@@ -73,6 +81,8 @@ function SidebarInner({ onClose }) {
   };
 
   const messages = activeSession?.messages ?? [];
+  const followUpChips = FOLLOW_UP_CHIPS[baseRoute] ?? FOLLOW_UP_CHIPS.default;
+  const lastAssistantIdx = messages.reduce((acc, m, i) => (m.role === 'assistant' ? i : acc), -1);
 
   return (
     <div className="flex flex-col h-full bg-brand-dark">
@@ -144,14 +154,29 @@ function SidebarInner({ onClose }) {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-3 space-y-3">
             {messages.map((msg, i) => (
-              <div key={i} className={`flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${msg.role === 'user' ? 'bg-accent-amber text-brand-dark' : 'bg-brand-slate border border-brand-slate-light text-text-secondary'}`}>
-                  {msg.role === 'user' ? <User size={11} /> : <Bot size={11} />}
+              <React.Fragment key={i}>
+                <div className={`flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${msg.role === 'user' ? 'bg-accent-amber text-brand-dark' : 'bg-brand-slate border border-brand-slate-light text-text-secondary'}`}>
+                    {msg.role === 'user' ? <User size={11} /> : <Bot size={11} />}
+                  </div>
+                  <div className={`max-w-[85%] px-3 py-2.5 rounded-2xl text-xs leading-relaxed ${msg.role === 'user' ? 'bg-accent-amber/15 text-accent-amber border border-accent-amber/20 rounded-tr-none' : 'bg-brand-slate text-text-primary border border-brand-slate-light rounded-tl-none'}`}>
+                    <MarkdownText text={msg.content} />
+                  </div>
                 </div>
-                <div className={`max-w-[85%] px-3 py-2.5 rounded-2xl text-xs leading-relaxed ${msg.role === 'user' ? 'bg-accent-amber/15 text-accent-amber border border-accent-amber/20 rounded-tr-none' : 'bg-brand-slate text-text-primary border border-brand-slate-light rounded-tl-none'}`}>
-                  <MarkdownText text={msg.content} />
-                </div>
-              </div>
+                {!isTyping && i === lastAssistantIdx && messages.length > 1 && (
+                  <div className="flex flex-wrap gap-1.5 pl-8">
+                    {followUpChips.map((chip) => (
+                      <button
+                        key={chip}
+                        onClick={() => sendMessage(chip)}
+                        className="px-2.5 py-1 rounded-full border border-brand-slate-light text-text-muted hover:border-accent-amber/50 hover:text-accent-amber text-[10px] font-medium transition-colors bg-brand-slate"
+                      >
+                        {chip}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </React.Fragment>
             ))}
             {isTyping && (
               <div className="flex gap-2">

@@ -338,6 +338,11 @@ const Dashboard = () => {
   const [showScoreModal, setShowScoreModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
+  const cashValuePolicies = policies.filter((p) => p.cashValueSeries?.length > 0);
+  const [chartPolicyId, setChartPolicyId] = useState(() => cashValuePolicies[0]?.id ?? null);
+  const selectedChartPolicy = cashValuePolicies.find((p) => p.id === chartPolicyId) ?? cashValuePolicies[0];
+  const chartData = selectedChartPolicy?.cashValueSeries ?? cashValueHistory;
+
   const firstName = user?.firstName ?? 'there';
 
   const hour = new Date().getHours();
@@ -401,7 +406,10 @@ const Dashboard = () => {
       label: 'Portfolio Score',
       value: portfolioScore,
       isScore: true,
-      sub: 'Click to view review items',
+      sub: (() => {
+        const n = highOpps.length + medOpps.length;
+        return n === 0 ? 'No action items — great shape' : `${n} item${n > 1 ? 's' : ''} need${n === 1 ? 's' : ''} attention`;
+      })(),
       clickable: true,
     },
   ];
@@ -475,21 +483,48 @@ const Dashboard = () => {
         {/* Chart + Events */}
         {policies.length > 0 && <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           <div className="lg:col-span-2 bg-brand-slate border border-brand-slate-light rounded-xl p-4 md:p-6">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-start justify-between mb-3 gap-2 flex-wrap">
               <div>
                 <h2 className="text-white font-bold text-sm md:text-base">Cash Value Growth</h2>
-                <p className="text-text-muted text-xs mt-0.5">Historical &amp; projected · MetLife Whole Life</p>
+                <p className="text-text-muted text-xs mt-0.5">Historical &amp; projected</p>
               </div>
-              <div className="hidden sm:flex items-center gap-4 text-xs text-text-muted">
+              <div className="hidden sm:flex items-center gap-4 text-xs text-text-muted flex-shrink-0">
                 <span className="flex items-center gap-1.5">
-                  <span className="w-5 h-[2px] bg-accent-amber inline-block"></span>Actual
+                  <span className="w-5 h-[2px] bg-accent-amber inline-block" />Actual
                 </span>
                 <span className="flex items-center gap-1.5 opacity-60">
-                  <span className="w-5 h-[2px] border-b-2 border-dashed border-accent-amber inline-block"></span>Projected
+                  <span className="w-5 h-[2px] border-b-2 border-dashed border-accent-amber inline-block" />Projected
                 </span>
               </div>
             </div>
-            <CashValueChart data={cashValueHistory} />
+            {cashValuePolicies.length > 1 && (
+              <div className="flex gap-2 mb-3 flex-wrap">
+                {cashValuePolicies.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => setChartPolicyId(p.id)}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                      chartPolicyId === p.id
+                        ? 'border-accent-amber bg-accent-amber/10 text-accent-amber'
+                        : 'border-brand-slate-light text-text-secondary hover:border-accent-amber/40'
+                    }`}
+                  >
+                    {p.shortName}
+                  </button>
+                ))}
+              </div>
+            )}
+            <CashValueChart data={chartData} />
+            {selectedChartPolicy && (
+              <div className="mt-3 flex justify-end">
+                <button
+                  onClick={() => navigate(`/report/${selectedChartPolicy.id}`)}
+                  className="flex items-center gap-1 text-xs text-accent-amber hover:underline font-semibold"
+                >
+                  View full projection <ChevronRight size={12} />
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="bg-brand-slate border border-brand-slate-light rounded-xl p-4 md:p-6">

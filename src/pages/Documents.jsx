@@ -203,33 +203,47 @@ export default function Documents() {
           </div>
         )}
 
-        {/* Drop zone */}
-        <div
-          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={onDrop}
-          onClick={() => fileInputRef.current?.click()}
-          className={`flex flex-col items-center justify-center gap-3 p-10 rounded-2xl border-2 border-dashed cursor-pointer transition-all ${
-            dragging
-              ? 'border-accent-amber bg-accent-amber/5'
-              : 'border-brand-slate-light hover:border-accent-amber/50 hover:bg-brand-slate/40'
-          }`}
-        >
-          <div className="w-12 h-12 rounded-full bg-accent-amber/10 flex items-center justify-center">
-            <Upload size={22} className="text-accent-amber" />
+        {/* Drop zone — full when no docs, compact bar when docs exist */}
+        {docs.length === 0 ? (
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={onDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`flex flex-col items-center justify-center gap-3 p-10 rounded-2xl border-2 border-dashed cursor-pointer transition-all ${
+              dragging
+                ? 'border-accent-amber bg-accent-amber/5'
+                : 'border-brand-slate-light hover:border-accent-amber/50 hover:bg-brand-slate/40'
+            }`}
+          >
+            <div className="w-12 h-12 rounded-full bg-accent-amber/10 flex items-center justify-center">
+              <Upload size={22} className="text-accent-amber" />
+            </div>
+            <div className="text-center">
+              <p className="text-white font-semibold text-sm">Drop your policy document here</p>
+              <p className="text-text-muted text-xs mt-1">PDF, JPEG, PNG, Word — policy contracts, illustrations, statements</p>
+            </div>
+            <span className="px-4 py-1.5 bg-brand-slate border border-brand-slate-light rounded-full text-xs text-text-secondary font-medium">
+              or click to browse
+            </span>
           </div>
-          <div className="text-center">
-            <p className="text-white font-semibold text-sm">
-              Drop your policy document here
-            </p>
-            <p className="text-text-muted text-xs mt-1">
-              PDF, JPEG, PNG, Word — policy contracts, illustrations, statements
-            </p>
+        ) : (
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={onDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed cursor-pointer transition-all ${
+              dragging
+                ? 'border-accent-amber bg-accent-amber/5'
+                : 'border-brand-slate-light hover:border-accent-amber/50 hover:bg-brand-slate/40'
+            }`}
+          >
+            <Upload size={16} className="text-accent-amber flex-shrink-0" />
+            <p className="text-text-secondary text-sm flex-1">Drop a document here, or <span className="text-accent-amber font-semibold">click to browse</span></p>
+            <span className="text-text-muted text-xs hidden sm:block">PDF, JPEG, PNG, Word</span>
           </div>
-          <span className="px-4 py-1.5 bg-brand-slate border border-brand-slate-light rounded-full text-xs text-text-secondary font-medium">
-            or click to browse
-          </span>
-        </div>
+        )}
 
         {/* Document list */}
         {docs.length > 0 && (

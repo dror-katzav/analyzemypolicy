@@ -6,6 +6,30 @@ import {
 import AppNav from '../components/AppNav';
 import { useAuth } from '../context/AuthContext';
 
+const AdvisorAvatar = ({ size = 64, className = '' }) => (
+  <svg
+    width={size} height={size} viewBox="0 0 64 64"
+    className={`rounded-2xl flex-shrink-0 ${className}`}
+    style={{ background: 'linear-gradient(135deg, #0e6cc4 0%, #1e40af 100%)' }}
+  >
+    {/* head */}
+    <circle cx="32" cy="22" r="11" fill="white" fillOpacity="0.9" />
+    {/* shoulders */}
+    <ellipse cx="32" cy="54" rx="18" ry="12" fill="white" fillOpacity="0.9" />
+  </svg>
+);
+
+const AdvisorAvatarRound = ({ size = 36, className = '' }) => (
+  <svg
+    width={size} height={size} viewBox="0 0 36 36"
+    className={`rounded-full flex-shrink-0 ${className}`}
+    style={{ background: 'linear-gradient(135deg, #0e6cc4 0%, #1e40af 100%)' }}
+  >
+    <circle cx="18" cy="13" r="7" fill="white" fillOpacity="0.9" />
+    <ellipse cx="18" cy="31" rx="11" ry="7" fill="white" fillOpacity="0.9" />
+  </svg>
+);
+
 const ADVISOR = {
   name: 'Michael Torres, CFP®',
   title: 'Senior Policy Advisor',
@@ -131,12 +155,7 @@ export default function Advisor() {
 
         {/* Advisor profile card */}
         <div className="bg-brand-slate border border-brand-slate-light rounded-2xl p-6 mb-6 flex flex-col md:flex-row items-start gap-5">
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-xl font-bold flex-shrink-0"
-            style={{ backgroundColor: ADVISOR.avatarColor }}
-          >
-            {ADVISOR.avatar}
-          </div>
+          <AdvisorAvatar size={64} />
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between flex-wrap gap-2">
               <div>
@@ -248,12 +267,7 @@ export default function Advisor() {
                 </span>
               </div>
               <div className="flex gap-3">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                  style={{ backgroundColor: ADVISOR.avatarColor }}
-                >
-                  {ADVISOR.avatar}
-                </div>
+                <AdvisorAvatarRound size={32} />
                 <div>
                   <p className="text-text-secondary text-sm leading-relaxed line-clamp-2">
                     {messages[messages.length - 1].text}
@@ -388,12 +402,7 @@ export default function Advisor() {
           <div className="bg-brand-slate border border-brand-slate-light rounded-2xl overflow-hidden flex flex-col" style={{ minHeight: '500px' }}>
             {/* Chat header */}
             <div className="flex items-center gap-3 p-4 border-b border-brand-slate-light">
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                style={{ backgroundColor: ADVISOR.avatarColor }}
-              >
-                {ADVISOR.avatar}
-              </div>
+              <AdvisorAvatarRound size={36} />
               <div>
                 <p className="text-white font-semibold text-sm">{ADVISOR.name}</p>
                 <p className="text-xs text-green-400 flex items-center gap-1">
@@ -410,15 +419,13 @@ export default function Advisor() {
             <div className="flex-1 overflow-y-auto p-5 space-y-4 chat-scroll">
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex gap-3 ${msg.from === 'user' ? 'flex-row-reverse' : ''}`}>
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    style={{
-                      backgroundColor: msg.from === 'user' ? '#f59e0b' : ADVISOR.avatarColor,
-                      color: '#fff',
-                    }}
-                  >
-                    {msg.from === 'user' ? (user?.firstName?.[0] ?? 'U') : ADVISOR.avatar}
-                  </div>
+                  {msg.from === 'user' ? (
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 bg-accent-amber text-brand-dark">
+                      {user?.firstName?.[0] ?? 'U'}
+                    </div>
+                  ) : (
+                    <AdvisorAvatarRound size={28} />
+                  )}
                   <div
                     className={`max-w-[75%] p-3.5 rounded-2xl text-sm leading-relaxed ${
                       msg.from === 'user'

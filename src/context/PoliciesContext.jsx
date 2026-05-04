@@ -73,7 +73,7 @@ export const PoliciesProvider = ({ children }) => {
         .forEach((m) => {
           const d = new Date(m.date); d.setHours(0, 0, 0, 0);
           const days = Math.round((d - today) / 86400000);
-          if (days <= 1461) { // show events within ~4 years
+          if (days >= 0 && days <= 1461) { // only upcoming events within ~4 years
             events.push({
               id: m.id,
               date: m.date,
@@ -98,6 +98,10 @@ export const PoliciesProvider = ({ children }) => {
           .filter((m) => m.type === 'premium' && !m.isPast)
           .map((m) => ({ ...m, premium: p.premium, policyName: p.shortName, policyId: p.id }))
       )
+      .filter((m) => {
+        const d = new Date(m.date); d.setHours(0, 0, 0, 0);
+        return d >= today;
+      })
       .sort((a, b) => new Date(a.date) - new Date(b.date));
     if (!premiumMilestones.length) return null;
     const next = premiumMilestones[0];

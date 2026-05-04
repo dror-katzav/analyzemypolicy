@@ -14,6 +14,11 @@ const CONTEXTUAL_PROMPTS = {
     'How do I read a policy illustration?',
     'What is a declarations page?',
   ],
+  '/report': [
+    'What does my policy score mean?',
+    'Explain the top opportunity on this policy.',
+    'When should I consider converting this policy?',
+  ],
   '/advisor': [
     'Should I convert my term policy to whole life?',
     'How much life insurance do I need?',

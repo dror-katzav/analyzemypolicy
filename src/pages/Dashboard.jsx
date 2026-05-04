@@ -497,25 +497,33 @@ const Dashboard = () => {
               <h2 className="text-white font-bold text-sm md:text-base">Upcoming Events</h2>
               <Calendar size={16} className="text-text-muted" />
             </div>
-            <div className="space-y-2 md:space-y-3">
-              {upcomingEvents.map((ev) => (
-                <div
-                  key={ev.id}
-                  className="flex items-start gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg border border-brand-slate-light hover:border-accent-amber/40 cursor-pointer transition-colors group"
-                  onClick={() => navigate(`/report/${ev.policyId}`)}
-                >
-                  <div className={`mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase flex-shrink-0 ${urgencyBadge(ev.urgency)}`}>
-                    {daysAway(ev.date) <= 0 ? 'TODAY' : `${daysAway(ev.date)}d`}
+            {upcomingEvents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <CheckCircle size={24} className="text-green-400 mb-2" />
+                <p className="text-text-secondary text-sm font-medium">No upcoming events</p>
+                <p className="text-text-muted text-xs mt-1">You're all caught up.</p>
+              </div>
+            ) : (
+              <div className="space-y-2 md:space-y-3">
+                {upcomingEvents.map((ev) => (
+                  <div
+                    key={ev.id}
+                    className="flex items-start gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg border border-brand-slate-light hover:border-accent-amber/40 cursor-pointer transition-colors group"
+                    onClick={() => navigate(`/report/${ev.policyId}`)}
+                  >
+                    <div className={`mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase flex-shrink-0 ${urgencyBadge(ev.urgency)}`}>
+                      {daysAway(ev.date) <= 0 ? 'TODAY' : `${daysAway(ev.date)}d`}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs md:text-sm text-white font-medium leading-snug group-hover:text-accent-amber transition-colors">
+                        {ev.label}
+                      </p>
+                      <p className="text-xs text-text-muted mt-0.5">{ev.detail}</p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-xs md:text-sm text-white font-medium leading-snug group-hover:text-accent-amber transition-colors">
-                      {ev.label}
-                    </p>
-                    <p className="text-xs text-text-muted mt-0.5">{ev.detail}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>}
 

@@ -7,6 +7,7 @@ import Report from './pages/Report';
 import Documents from './pages/Documents';
 import Advisor from './pages/Advisor';
 import Security from './pages/Security';
+import NotFound from './pages/NotFound';
 import { useAuth } from './context/AuthContext';
 import { AIChatProvider } from './context/AIChatContext';
 import { PoliciesProvider } from './context/PoliciesContext';
@@ -65,6 +66,7 @@ function App() {
           <Route path="/advisor" element={<ProtectedRoute><Advisor /></ProtectedRoute>} />
           <Route path="/report/:id" element={<ProtectedRoute><Report /></ProtectedRoute>} />
           <Route path="/security" element={<PublicRoute><Security /></PublicRoute>} />
+          <Route path="*" element={<PublicRoute><NotFound /></PublicRoute>} />
         </Routes>
         <AuthSidebar />
       </Router>

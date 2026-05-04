@@ -280,3 +280,114 @@ export const PORTFOLIO_CASH_VALUE = [
   { year: 2035, projected: 218600 },
   { year: 2040, projected: 312000 },
 ];
+
+export const ADVISOR = {
+  name: 'Michael Torres, CFP®',
+  title: 'Senior Policy Advisor',
+  firm: 'AnalyzeMyPolicy Advisory',
+  avatar: 'MT',
+  avatarColor: '#0e6cc4',
+  rating: 4.9,
+  reviews: 214,
+  specialty: ['Estate Planning', 'Whole Life', 'Long-Term Care'],
+  bio: 'Michael has 18 years of experience helping high-net-worth families optimize their life insurance portfolios. He specializes in estate planning integration and permanent life strategies.',
+  responseTime: 'Typically replies within 2 hours',
+};
+
+const getUpcomingCall = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 2);
+  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+};
+
+export const UPCOMING_CALLS = [
+  {
+    id: 'call-1',
+    type: 'video',
+    title: 'Policy Review — MetLife Whole Life',
+    date: getUpcomingCall(),
+    time: '10:00 AM EST',
+    status: 'confirmed',
+  },
+];
+
+export const ADVISOR_MESSAGES = [
+  {
+    id: 'm-1',
+    from: 'advisor',
+    text: "I've reviewed your portfolio analysis. Your MetLife policy is in great shape. I'd like to discuss the beneficiary update and the paid-up additions option on our upcoming call.",
+    time: 'Apr 27, 2:14 PM',
+  },
+  {
+    id: 'm-2',
+    from: 'user',
+    text: 'That sounds great, looking forward to it. Should I bring the original policy documents?',
+    time: 'Apr 27, 3:01 PM',
+  },
+  {
+    id: 'm-3',
+    from: 'advisor',
+    text: "No need — I already have your analysis from AnalyzeMyPolicy. Just bring any questions you have about the conversion option for your Protective term policy. That's the main opportunity I want to walk you through.",
+    time: 'Apr 28, 9:22 AM',
+  },
+];
+
+export const TIME_SLOTS = ['9:00 AM', '10:00 AM', '11:30 AM', '1:00 PM', '2:30 PM', '4:00 PM'];
+
+export const getNextWeekdays = () => {
+  const days = [];
+  const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 1); // start tomorrow
+  while (days.length < 5) {
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) {
+      days.push({
+        label: labels[dow],
+        date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      });
+    }
+    d.setDate(d.getDate() + 1);
+  }
+  return days;
+};
+
+export const createDemoPolicy = (fileName) => ({
+  id: 'pol-' + Date.now(),
+  name: fileName || 'Demo Policy',
+  shortName: 'Uploaded Policy',
+  type: 'Term Life',
+  carrier: 'Your Carrier',
+  carrierInitials: 'UP',
+  carrierColor: '#7c3aed',
+  faceAmount: 2000000,
+  premium: 320,
+  premiumFrequency: 'monthly',
+  nextPremiumDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+  issueDate: new Date().toISOString().slice(0, 10),
+  insured: 'Policy Holder',
+  beneficiary: 'Beneficiary',
+  cashValue: 0,
+  deathBenefit: 2000000,
+  score: 72,
+  scoreLabel: 'Needs Review',
+  scoreColor: 'amber',
+  status: 'active',
+  statusLabel: 'Active',
+  summary: 'Policy analyzed via AnalyzeMyPolicy. Coverage aligns with your income replacement needs. One beneficiary review item identified.',
+  strengths: [
+    'Coverage amount aligns with income replacement needs',
+    'Term covers key wealth-building years',
+  ],
+  opportunities: [
+    { id: 'op-wiz-1', severity: 'medium', title: 'Review Beneficiary Designations', description: 'Your beneficiary designations may need updating to reflect current estate plans.', cta: 'Review Now' },
+    { id: 'op-wiz-2', severity: 'low', title: 'Premium Benchmarking', description: 'Comparable policies may offer similar coverage at a lower premium. Consider getting a comparison quote.', cta: 'Get Quotes' },
+  ],
+  milestones: [
+    { id: 'ms-wiz-1', date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10), isPast: false, isUrgent: true, type: 'premium', label: 'First Premium Due', detail: 'Review and confirm your first premium payment.' },
+    { id: 'ms-wiz-2', date: new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10), isPast: false, type: 'review', label: 'Annual Policy Review', detail: 'Review coverage adequacy and beneficiary designations.' },
+  ],
+  cashValueSeries: [],
+});

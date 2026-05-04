@@ -5,104 +5,12 @@ import {
 } from 'lucide-react';
 import AppNav from '../components/AppNav';
 import { useAuth } from '../context/AuthContext';
+import { AdvisorAvatar, AdvisorAvatarRound } from '../components/AdvisorAvatar';
+import { ADVISOR, UPCOMING_CALLS, ADVISOR_MESSAGES, TIME_SLOTS, getNextWeekdays } from '../data/mockData';
 
-const AdvisorAvatar = ({ size = 64, className = '' }) => (
-  <svg
-    width={size} height={size} viewBox="0 0 64 64"
-    className={`rounded-2xl flex-shrink-0 ${className}`}
-    style={{ background: 'linear-gradient(135deg, #0e6cc4 0%, #1e40af 100%)' }}
-  >
-    {/* head */}
-    <circle cx="32" cy="22" r="11" fill="white" fillOpacity="0.9" />
-    {/* shoulders */}
-    <ellipse cx="32" cy="54" rx="18" ry="12" fill="white" fillOpacity="0.9" />
-  </svg>
-);
-
-const AdvisorAvatarRound = ({ size = 36, className = '' }) => (
-  <svg
-    width={size} height={size} viewBox="0 0 36 36"
-    className={`rounded-full flex-shrink-0 ${className}`}
-    style={{ background: 'linear-gradient(135deg, #0e6cc4 0%, #1e40af 100%)' }}
-  >
-    <circle cx="18" cy="13" r="7" fill="white" fillOpacity="0.9" />
-    <ellipse cx="18" cy="31" rx="11" ry="7" fill="white" fillOpacity="0.9" />
-  </svg>
-);
-
-const ADVISOR = {
-  name: 'Michael Torres, CFP®',
-  title: 'Senior Policy Advisor',
-  firm: 'AnalyzeMyPolicy Advisory',
-  avatar: 'MT',
-  avatarColor: '#0e6cc4',
-  rating: 4.9,
-  reviews: 214,
-  specialty: ['Estate Planning', 'Whole Life', 'Long-Term Care'],
-  bio: 'Michael has 18 years of experience helping high-net-worth families optimize their life insurance portfolios. He specializes in estate planning integration and permanent life strategies.',
-  responseTime: 'Typically replies within 2 hours',
-};
-
-const getUpcomingCall = () => {
-  const d = new Date();
-  d.setDate(d.getDate() + 2);
-  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
-  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-};
-
-const UPCOMING = [
-  {
-    id: 'call-1',
-    type: 'video',
-    title: 'Policy Review — MetLife Whole Life',
-    date: getUpcomingCall(),
-    time: '10:00 AM EST',
-    status: 'confirmed',
-  },
-];
-
-const MESSAGES = [
-  {
-    id: 'm-1',
-    from: 'advisor',
-    text: "I've reviewed your portfolio analysis. Your MetLife policy is in great shape. I'd like to discuss the beneficiary update and the paid-up additions option on our upcoming call.",
-    time: 'Apr 27, 2:14 PM',
-  },
-  {
-    id: 'm-2',
-    from: 'user',
-    text: 'That sounds great, looking forward to it. Should I bring the original policy documents?',
-    time: 'Apr 27, 3:01 PM',
-  },
-  {
-    id: 'm-3',
-    from: 'advisor',
-    text: "No need — I already have your analysis from AnalyzeMyPolicy. Just bring any questions you have about the conversion option for your Protective term policy. That's the main opportunity I want to walk you through.",
-    time: 'Apr 28, 9:22 AM',
-  },
-];
-
-const TIME_SLOTS = ['9:00 AM', '10:00 AM', '11:30 AM', '1:00 PM', '2:30 PM', '4:00 PM'];
-
-const getNextWeekdays = () => {
-  const days = [];
-  const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + 1); // start tomorrow
-  while (days.length < 5) {
-    const dow = d.getDay();
-    if (dow !== 0 && dow !== 6) {
-      days.push({
-        label: labels[dow],
-        date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      });
-    }
-    d.setDate(d.getDate() + 1);
-  }
-  return days;
-};
 const DAYS = getNextWeekdays();
+
+
 
 export default function Advisor() {
   const { user } = useAuth();
@@ -111,7 +19,7 @@ export default function Advisor() {
   const [callType, setCallType] = useState('video');
   const [scheduled, setScheduled] = useState(false);
   const [msgInput, setMsgInput] = useState('');
-  const [messages, setMessages] = useState(MESSAGES);
+  const [messages, setMessages] = useState(ADVISOR_MESSAGES);
   const [tab, setTab] = useState('overview');
 
   const sendMessage = () => {
@@ -231,7 +139,7 @@ export default function Advisor() {
             </div>
 
             {/* Upcoming call */}
-            {UPCOMING.map((call) => (
+            {UPCOMING_CALLS.map((call) => (
               <div key={call.id} className="bg-brand-slate border border-brand-slate-light rounded-xl p-5">
                 <h3 className="text-white font-bold mb-4 flex items-center gap-2">
                   <Calendar size={16} className="text-text-muted" /> Upcoming

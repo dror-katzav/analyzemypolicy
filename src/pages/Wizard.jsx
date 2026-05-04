@@ -4,6 +4,7 @@ import { Shield, Send, Share, Clock, DollarSign, AlertTriangle, Calendar, Messag
 import VirtualAdvisorModal from '../components/VirtualAdvisorModal';
 import { parsePolicy } from '../utils/policyParser';
 import { usePolicies } from '../context/PoliciesContext';
+import { createDemoPolicy } from '../data/mockData';
 
 const LIFE_CHANGES = [
   'Marriage', 'Divorce', 'New child', 'Income change', 
@@ -265,43 +266,7 @@ const Wizard = () => {
     setLoadingStep(6);
 
     // Build and save the analyzed policy
-    const newPolicy = {
-      id: 'pol-' + Date.now(),
-      name: uploadedFile ? uploadedFile.name.replace(/\.[^.]+$/, '') : 'Demo Policy',
-      shortName: 'Uploaded Policy',
-      type: 'Term Life',
-      carrier: 'Your Carrier',
-      carrierInitials: 'UP',
-      carrierColor: '#7c3aed',
-      faceAmount: 2000000,
-      premium: 320,
-      premiumFrequency: 'monthly',
-      nextPremiumDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
-      issueDate: new Date().toISOString().slice(0, 10),
-      insured: 'Policy Holder',
-      beneficiary: 'Beneficiary',
-      cashValue: 0,
-      deathBenefit: 2000000,
-      score: 72,
-      scoreLabel: 'Needs Review',
-      scoreColor: 'amber',
-      status: 'active',
-      statusLabel: 'Active',
-      summary: 'Policy analyzed via AnalyzeMyPolicy. Coverage aligns with your income replacement needs. One beneficiary review item identified.',
-      strengths: [
-        'Coverage amount aligns with income replacement needs',
-        'Term covers key wealth-building years',
-      ],
-      opportunities: [
-        { id: 'op-wiz-1', severity: 'medium', title: 'Review Beneficiary Designations', description: 'Your beneficiary designations may need updating to reflect current estate plans.', cta: 'Review Now' },
-        { id: 'op-wiz-2', severity: 'low', title: 'Premium Benchmarking', description: 'Comparable policies may offer similar coverage at a lower premium. Consider getting a comparison quote.', cta: 'Get Quotes' },
-      ],
-      milestones: [
-        { id: 'ms-wiz-1', date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10), isPast: false, isUrgent: true, type: 'premium', label: 'First Premium Due', detail: 'Review and confirm your first premium payment.' },
-        { id: 'ms-wiz-2', date: new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10), isPast: false, type: 'review', label: 'Annual Policy Review', detail: 'Review coverage adequacy and beneficiary designations.' },
-      ],
-      cashValueSeries: [],
-    };
+    const newPolicy = createDemoPolicy(uploadedFile ? uploadedFile.name.replace(/\.[^.]+$/, '') : null);
     addPolicy(newPolicy);
 
     setMessages(prev => [

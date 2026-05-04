@@ -356,6 +356,24 @@ const Dashboard = () => {
     return `Next due ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
   })();
 
+  const highOpps = policies.flatMap((p) => p.opportunities.filter((o) => o.severity === 'high'));
+  const medOpps = policies.flatMap((p) => p.opportunities.filter((o) => o.severity === 'medium'));
+  const subtitleMsg = (() => {
+    if (policies.length === 0) return 'Add your first policy to get started.';
+    if (highOpps.length > 0) return `${highOpps.length} high-priority action item${highOpps.length > 1 ? 's' : ''} need${highOpps.length === 1 ? 's' : ''} your attention.`;
+    if (medOpps.length > 0) return `${medOpps.length} improvement opportunity${medOpps.length > 1 ? 's' : ''} identified across your policies.`;
+    return 'Your portfolio is in great shape — no critical items.';
+  })();
+
+  const cashValueGrowthPct = (() => {
+    const actual = cashValueHistory.filter((d) => d.actual !== undefined);
+    if (actual.length < 2) return null;
+    const prev = actual[actual.length - 2].actual;
+    const curr = actual[actual.length - 1].actual;
+    const pct = ((curr - prev) / prev) * 100;
+    return (pct >= 0 ? '+' : '') + pct.toFixed(1) + '% this year';
+  })();
+
   const kpiCards = [
     {
       label: 'Total Coverage',
@@ -367,7 +385,7 @@ const Dashboard = () => {
     {
       label: 'Est. Cash Value',
       value: fmt(estimatedCashValue),
-      sub: '+8.9% this year',
+      sub: cashValueGrowthPct ?? '—',
       icon: <TrendingUp size={20} className="text-green-400" />,
       iconBg: 'bg-green-500/10',
     },
@@ -398,7 +416,7 @@ const Dashboard = () => {
           {greeting}, {firstName}
         </h1>
         <p className="text-text-secondary mt-1 text-sm">
-          Your policy portfolio is up to date. One action item needs attention.
+          {subtitleMsg}
         </p>
       </div>
 
@@ -455,7 +473,7 @@ const Dashboard = () => {
         </div>
 
         {/* Chart + Events */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        {policies.length > 0 && <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           <div className="lg:col-span-2 bg-brand-slate border border-brand-slate-light rounded-xl p-4 md:p-6">
             <div className="flex items-center justify-between mb-2">
               <div>
@@ -499,11 +517,28 @@ const Dashboard = () => {
               ))}
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* Policy Cards */}
         <div>
           <h2 className="text-white font-bold mb-3 md:mb-4 text-sm md:text-base">Your Policies</h2>
+          {policies.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-6 bg-brand-slate border border-dashed border-brand-slate-light rounded-xl text-center">
+              <div className="w-14 h-14 rounded-2xl bg-accent-amber/10 flex items-center justify-center mb-4">
+                <Shield size={26} className="text-accent-amber" />
+              </div>
+              <h3 className="text-white font-bold text-lg mb-2">No policies yet</h3>
+              <p className="text-text-secondary text-sm mb-6 max-w-sm">
+                Upload a policy document or illustration to get a full AI-powered analysis and monitoring.
+              </p>
+              <button
+                onClick={() => navigate('/analyze')}
+                className="px-6 py-3 bg-accent-amber hover:bg-accent-amber-hover text-brand-dark font-bold rounded-lg transition-colors text-sm"
+              >
+                + Analyze Your First Policy
+              </button>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
             {policies.map((policy) => {
               const scoreColor = policy.score >= 80 ? 'text-green-400' : policy.score >= 65 ? 'text-accent-amber' : 'text-red-400';
@@ -569,6 +604,7 @@ const Dashboard = () => {
               );
             })}
           </div>
+          )}
         </div>
 
         {/* CTA banner */}

@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Report from './pages/Report';
 import Documents from './pages/Documents';
 import Advisor from './pages/Advisor';
+import Security from './pages/Security';
 import { useAuth } from './context/AuthContext';
 import { AIChatProvider } from './context/AIChatContext';
 import { PoliciesProvider } from './context/PoliciesContext';
@@ -17,6 +18,7 @@ const PAGE_TITLES = {
   '/dashboard': 'Dashboard — AnalyzeMyPolicy',
   '/documents': 'Documents — AnalyzeMyPolicy',
   '/advisor': 'Advisor — AnalyzeMyPolicy',
+  '/security': 'Security & Privacy — AnalyzeMyPolicy',
 };
 
 function TitleManager() {
@@ -41,6 +43,14 @@ const AuthSidebar = () => {
   return isAuthenticated ? <AIChatSidebar /> : null;
 };
 
+// Public page that still needs sidebar margin when user is logged in
+const PublicRoute = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated
+    ? <div className="lg:mr-[300px]">{children}</div>
+    : <>{children}</>;
+};
+
 function App() {
   return (
     <PoliciesProvider>
@@ -54,6 +64,7 @@ function App() {
           <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
           <Route path="/advisor" element={<ProtectedRoute><Advisor /></ProtectedRoute>} />
           <Route path="/report/:id" element={<ProtectedRoute><Report /></ProtectedRoute>} />
+          <Route path="/security" element={<PublicRoute><Security /></PublicRoute>} />
         </Routes>
         <AuthSidebar />
       </Router>

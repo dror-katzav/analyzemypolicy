@@ -139,14 +139,15 @@ const Landing = () => {
           <p className="text-base md:text-lg text-text-secondary mb-8 leading-relaxed">
             Institutional-grade life insurance monitoring for families who demand clarity and confidence.
           </p>
-          <div className="grid grid-cols-3 gap-4 md:gap-6 mb-8">
+          <div className="grid grid-cols-3 gap-4 md:gap-6 mb-2">
             {[['98%', 'Satisfaction'], ['$2B+', 'Analyzed'], ['12k+', 'Families']].map(([v, l]) => (
               <div key={l}>
-                <p className="text-xl md:text-2xl font-bold text-white">{v}</p>
+                <p className="text-xl md:text-2xl font-bold text-white">{v}<sup className="text-[10px] text-text-muted font-normal ml-0.5">*</sup></p>
                 <p className="text-text-muted text-xs mt-0.5">{l}</p>
               </div>
             ))}
           </div>
+          <p className="text-[10px] text-text-muted mb-6">* Internal data as of Q1 2026. Results may vary.</p>
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-slate rounded-full border border-brand-slate-light text-text-secondary text-xs">
             🔒 Bank-grade encryption · SOC 2 · Private &amp; confidential
           </div>

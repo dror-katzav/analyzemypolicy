@@ -19,12 +19,19 @@ const ADVISOR = {
   responseTime: 'Typically replies within 2 hours',
 };
 
+const getUpcomingCall = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 2);
+  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+};
+
 const UPCOMING = [
   {
     id: 'call-1',
     type: 'video',
     title: 'Policy Review — MetLife Whole Life',
-    date: 'May 5, 2026',
+    date: getUpcomingCall(),
     time: '10:00 AM EST',
     status: 'confirmed',
   },
@@ -34,7 +41,7 @@ const MESSAGES = [
   {
     id: 'm-1',
     from: 'advisor',
-    text: "Hi James! I've reviewed your portfolio analysis. Your MetLife policy is in great shape. I'd like to discuss the beneficiary update and the paid-up additions option on our upcoming call.",
+    text: "I've reviewed your portfolio analysis. Your MetLife policy is in great shape. I'd like to discuss the beneficiary update and the paid-up additions option on our upcoming call.",
     time: 'Apr 27, 2:14 PM',
   },
   {
@@ -52,17 +59,30 @@ const MESSAGES = [
 ];
 
 const TIME_SLOTS = ['9:00 AM', '10:00 AM', '11:30 AM', '1:00 PM', '2:30 PM', '4:00 PM'];
-const DAYS = [
-  { label: 'Mon', date: 'May 4' },
-  { label: 'Tue', date: 'May 5' },
-  { label: 'Wed', date: 'May 6' },
-  { label: 'Thu', date: 'May 7' },
-  { label: 'Fri', date: 'May 8' },
-];
+
+const getNextWeekdays = () => {
+  const days = [];
+  const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 1); // start tomorrow
+  while (days.length < 5) {
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) {
+      days.push({
+        label: labels[dow],
+        date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      });
+    }
+    d.setDate(d.getDate() + 1);
+  }
+  return days;
+};
+const DAYS = getNextWeekdays();
 
 export default function Advisor() {
   const { user } = useAuth();
-  const [selectedDay, setSelectedDay] = useState('May 5');
+  const [selectedDay, setSelectedDay] = useState(() => DAYS[0]?.date ?? '');
   const [selectedTime, setSelectedTime] = useState('10:00 AM');
   const [callType, setCallType] = useState('video');
   const [scheduled, setScheduled] = useState(false);

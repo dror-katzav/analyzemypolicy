@@ -29,7 +29,8 @@ html[data-theme="light"] {
   --color-brand-navy: #f8fafc;
   --color-text-primary: #0f172a;
   --color-text-secondary: #475569;
-  --color-text-muted: #94a3b8;
+  /* #64748b on white = 4.6:1 — passes WCAG AA (was #94a3b8 = 2.5:1) */
+  --color-text-muted: #64748b;
 }
 
 /* Remap text-white → dark text in light mode */
@@ -37,10 +38,33 @@ html[data-theme="light"] .text-white {
   color: #0f172a !important;
 }
 
-/* Amber/colored buttons keep their own text color */
+/* Amber/colored buttons keep dark text on bright background */
 html[data-theme="light"] .bg-accent-amber,
 html[data-theme="light"] [class*="bg-accent-amber"] {
   color: #0f172a !important;
+}
+
+/* amber-700 on white = 4.9:1 — passes WCAG AA (amber #f59e0b on white = 2.9:1, fails) */
+html[data-theme="light"] .text-accent-amber {
+  color: #b45309 !important;
+}
+html[data-theme="light"] .hover\:text-accent-amber:hover {
+  color: #92400e !important;
+}
+
+/* green-500 on white = 2.3:1, fails — use green-700 (#15803d) = 5.1:1 */
+html[data-theme="light"] .text-green-400 {
+  color: #15803d !important;
+}
+
+/* red-400 on white = 3.1:1, fails — use red-700 (#b91c1c) = 5.9:1 */
+html[data-theme="light"] .text-red-400 {
+  color: #b91c1c !important;
+}
+
+/* blue-400 on white = 3.4:1, fails — use blue-700 (#1d4ed8) = 5.9:1 */
+html[data-theme="light"] .text-blue-400 {
+  color: #1d4ed8 !important;
 }
 
 /* Cards get a subtle shadow in light mode */

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Send, Share, Clock, DollarSign, AlertTriangle, Calendar, MessageCircle, X, Paperclip } from 'lucide-react';
-import VirtualAdvisorModal from '../components/VirtualAdvisorModal';
 import { parsePolicy } from '../utils/policyParser';
 import { usePolicies } from '../context/PoliciesContext';
+import { useAuth } from '../context/AuthContext';
 import { createDemoPolicy } from '../data/mockData';
 
 const LIFE_CHANGES = [
@@ -14,6 +14,7 @@ const LIFE_CHANGES = [
 const Wizard = () => {
   const navigate = useNavigate();
   const { addPolicy } = usePolicies();
+  const { user } = useAuth();
   const bottomRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -21,6 +22,7 @@ const Wizard = () => {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [uploadedFile, setUploadedFile] = useState(null);
+  const [extractedData, setExtractedData] = useState(null); // from parsePolicy
 
   // Step 2 specific
   const [selectedChanges, setSelectedChanges] = useState([]);
@@ -31,7 +33,6 @@ const Wizard = () => {
 
   // Modals
   const [showSchedule, setShowSchedule] = useState(false);
-  const [showVirtualAdvisor, setShowVirtualAdvisor] = useState(false);
   
   useEffect(() => {
     // Initial greeting
@@ -92,6 +93,7 @@ const Wizard = () => {
     try {
       const extracted = await parsePolicy(file);
       clearInterval(ticker);
+      setExtractedData(extracted); // store for use in showResults
       setMessages(prev => prev.filter(m => !m.isParsingDoc));
 
       const policyDesc = [
@@ -265,8 +267,9 @@ const Wizard = () => {
     setStep(3);
     setLoadingStep(6);
 
-    // Build and save the analyzed policy
-    const newPolicy = createDemoPolicy(uploadedFile ? uploadedFile.name.replace(/\.[^.]+$/, '') : null);
+    // Build policy from real extracted data if available, otherwise use demo template
+    const baseName = uploadedFile ? uploadedFile.name.replace(/\.[^.]+$/, '') : null;
+    const newPolicy = createDemoPolicy(baseName, extractedData);
     addPolicy(newPolicy);
 
     setMessages(prev => [
@@ -302,16 +305,29 @@ const Wizard = () => {
           <span>AnalyzeMyPolicy</span>
         </div>
         <div className="flex items-center gap-6">
-          <span className="px-3 py-1 bg-amber-100 text-accent-amber-hover text-xs font-bold uppercase rounded-full">Demo Mode</span>
+          {(!user || user.isGuest) && (
+            <span className="px-3 py-1 bg-amber-100 text-accent-amber-hover text-xs font-bold uppercase rounded-full">Demo Mode</span>
+          )}
+          {user && !user.isGuest && (
+            <span className="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold uppercase rounded-full">Signed In</span>
+          )}
           <span className="text-text-secondary text-sm hidden md:inline">Analysis</span>
           <span className="text-accent-amber text-sm font-semibold cursor-pointer tracking-wide" onClick={() => navigate('/')}>↗ Exit Demo</span>
         </div>
       </nav>
       
-      {/* Demo Banner */}
-      <div className="bg-amber-500/10 text-accent-amber text-center py-3 text-sm border-b border-amber-500/20 flex-shrink-0">
-        🎯 Demo Mode — Your data won't be saved. <span className="underline cursor-pointer" onClick={() => navigate('/')}>Create an account</span> to track your policy health over time.
-      </div>
+      {/* Demo Banner — shown only to guests/unauthenticated */}
+      {(!user || user.isGuest) && (
+        <div className="bg-amber-500/10 text-accent-amber text-center py-3 text-sm border-b border-amber-500/20 flex-shrink-0">
+          🎯 Demo Mode — Your data won't be saved.{' '}
+          <span className="underline cursor-pointer" onClick={() => navigate('/')}>Create an account</span> to track your policy health over time.
+        </div>
+      )}
+      {user && !user.isGuest && (
+        <div className="bg-green-500/10 text-green-400 text-center py-2.5 text-sm border-b border-green-500/20 flex-shrink-0">
+          ✓ Signed in as <span className="font-semibold">{user.firstName}</span> — your analysis will be saved to your account.
+        </div>
+      )}
       
       {/* Step Indicator */}
       <div className="flex items-center justify-center py-6 bg-brand-dark flex-shrink-0 px-4">
@@ -572,12 +588,6 @@ const Wizard = () => {
         </div>
       )}
 
-      {showVirtualAdvisor && (
-        <VirtualAdvisorModal 
-          onClose={() => setShowVirtualAdvisor(false)} 
-          initialContext={{ score: 72 }}
-        />
-      )}
     </div>
   );
 };

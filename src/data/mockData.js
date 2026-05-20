@@ -167,6 +167,14 @@ export const MOCK_POLICIES = [
           'As household income has grown, $500K may no longer be sufficient. A supplemental policy or conversion could close this gap.',
         cta: 'Get a Better Quote',
       },
+      {
+        id: 'op-5',
+        severity: 'medium',
+        title: 'Better Rates May Be Available for Your Current Coverage',
+        description:
+          'Market rates for 20-year term policies have fallen since 2020. Based on your age profile, comparable $500K coverage could be available for $185–220/month — potentially saving up to $82/month. A quick rate comparison takes under 5 minutes and requires no commitment.',
+        cta: 'Compare Rates Now',
+      },
     ],
     milestones: [
       {
@@ -354,40 +362,66 @@ export const getNextWeekdays = () => {
   return days;
 };
 
-export const createDemoPolicy = (fileName) => ({
-  id: 'pol-' + Date.now(),
-  name: fileName || 'Demo Policy',
-  shortName: 'Uploaded Policy',
-  type: 'Term Life',
-  carrier: 'Your Carrier',
-  carrierInitials: 'UP',
-  carrierColor: '#7c3aed',
-  faceAmount: 2000000,
-  premium: 320,
-  premiumFrequency: 'monthly',
-  nextPremiumDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
-  issueDate: new Date().toISOString().slice(0, 10),
-  insured: 'Policy Holder',
-  beneficiary: 'Beneficiary',
-  cashValue: 0,
-  deathBenefit: 2000000,
-  score: 72,
-  scoreLabel: 'Needs Review',
-  scoreColor: 'amber',
-  status: 'active',
-  statusLabel: 'Active',
-  summary: 'Policy analyzed via AnalyzeMyPolicy. Coverage aligns with your income replacement needs. One beneficiary review item identified.',
-  strengths: [
-    'Coverage amount aligns with income replacement needs',
-    'Term covers key wealth-building years',
-  ],
-  opportunities: [
-    { id: 'op-wiz-1', severity: 'medium', title: 'Review Beneficiary Designations', description: 'Your beneficiary designations may need updating to reflect current estate plans.', cta: 'Review Now' },
-    { id: 'op-wiz-2', severity: 'low', title: 'Premium Benchmarking', description: 'Comparable policies may offer similar coverage at a lower premium. Consider getting a comparison quote.', cta: 'Get Quotes' },
-  ],
-  milestones: [
-    { id: 'ms-wiz-1', date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10), isPast: false, isUrgent: true, type: 'premium', label: 'First Premium Due', detail: 'Review and confirm your first premium payment.' },
-    { id: 'ms-wiz-2', date: new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10), isPast: false, type: 'review', label: 'Annual Policy Review', detail: 'Review coverage adequacy and beneficiary designations.' },
-  ],
-  cashValueSeries: [],
-});
+/**
+ * Build a policy object from an uploaded file.
+ * @param {string|null} fileName  - base filename (no extension), used as fallback name
+ * @param {object|null} extracted - result of parsePolicy() — carrier, faceAmount, premium, etc.
+ */
+export const createDemoPolicy = (fileName, extracted = null) => {
+  const isWhole = extracted?.policyType === 'Whole Life' || extracted?.policyType === 'Universal Life';
+  const id = 'pol-' + Date.now();
+
+  const carrier = extracted?.carrier || 'Your Carrier';
+  const initials = carrier.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase() || 'UP';
+  const faceAmount = extracted?.faceAmount || 2000000;
+  const premium = extracted?.premium || 320;
+  const type = extracted?.policyType || 'Term Life';
+  const issueDate = extracted?.issueDate || new Date().toISOString().slice(0, 10);
+  const policyName = fileName || (extracted?.carrier ? `${extracted.carrier} Policy` : 'Uploaded Policy');
+
+  // Carrier color based on known carriers, else purple
+  const CARRIER_COLORS = {
+    MetLife: '#0e6cc4', 'Protective Life': '#7c3aed', Prudential: '#1a5c3c',
+    AIG: '#b91c1c', Nationwide: '#1e40af', Transamerica: '#0f766e',
+    'New York Life': '#374151', 'Pacific Life': '#0369a1',
+  };
+  const carrierColor = CARRIER_COLORS[carrier] || '#7c3aed';
+
+  return {
+    id,
+    name: policyName,
+    shortName: type,
+    type,
+    carrier,
+    carrierInitials: initials,
+    carrierColor,
+    faceAmount,
+    premium,
+    premiumFrequency: extracted?.premiumFrequency || 'monthly',
+    nextPremiumDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+    issueDate,
+    insured: extracted?.insuredName || 'Policy Holder',
+    beneficiary: extracted?.beneficiary || 'Beneficiary',
+    cashValue: isWhole ? Math.round(premium * 12 * 0.4) : 0,
+    deathBenefit: faceAmount,
+    score: 72,
+    scoreLabel: 'Needs Review',
+    scoreColor: 'amber',
+    status: 'active',
+    statusLabel: 'Active',
+    summary: `${type} policy from ${carrier}. Coverage of $${(faceAmount / 1_000_000).toFixed(1)}M analyzed via AnalyzeMyPolicy. Beneficiary and coverage adequacy items identified for review.`,
+    strengths: [
+      'Coverage amount aligns with income replacement needs',
+      type === 'Whole Life' ? 'Cash value growth provides tax-deferred savings' : 'Term covers key wealth-building years',
+    ],
+    opportunities: [
+      { id: `op-${id}-1`, severity: 'medium', title: 'Review Beneficiary Designations', description: 'Your beneficiary designations may need updating to reflect current estate plans.', cta: 'Review Now' },
+      { id: `op-${id}-2`, severity: 'low', title: 'Better Rates May Be Available', description: 'Comparable policies may offer similar coverage at a lower premium. A quick rate comparison takes under 5 minutes.', cta: 'Compare Rates' },
+    ],
+    milestones: [
+      { id: `ms-${id}-1`, date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10), isPast: false, isUrgent: true, type: 'premium', label: 'First Premium Due', detail: `$${premium} due — review and confirm your first premium payment.` },
+      { id: `ms-${id}-2`, date: new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10), isPast: false, type: 'review', label: 'Annual Policy Review', detail: 'Review coverage adequacy and beneficiary designations.' },
+    ],
+    cashValueSeries: [],
+  };
+};

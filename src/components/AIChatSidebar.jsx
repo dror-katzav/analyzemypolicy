@@ -82,7 +82,10 @@ function SidebarInner({ onClose }) {
 
   const messages = activeSession?.messages ?? [];
   const followUpChips = FOLLOW_UP_CHIPS[baseRoute] ?? FOLLOW_UP_CHIPS.default;
-  const lastAssistantIdx = messages.reduce((acc, m, i) => (m.role === 'assistant' ? i : acc), -1);
+  const lastAssistantIdx = messages.reduce(
+    (acc, m, i) => (m.role === 'model' || m.role === 'assistant' ? i : acc),
+    -1
+  );
 
   return (
     <div className="flex flex-col h-full bg-brand-dark">

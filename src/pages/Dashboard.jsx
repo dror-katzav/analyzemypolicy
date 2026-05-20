@@ -174,7 +174,7 @@ const Dashboard = () => {
               </p>
               {card.subAlert && (
                 <a
-                  href={`/report/${nextPremium?.policyName}`}
+                  href={`/report/${nextPremium?.policyId}`}
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowPremiumModal(true); }}
                   className="text-[10px] text-accent-amber hover:underline mt-0.5 block"
                 >

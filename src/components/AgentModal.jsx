@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, CheckCircle, Clock, Sparkles } from 'lucide-react';
 
 const AGENT_TASKS = (policy) => [
-  { id: 1, label: 'Reading and parsing policy documents', duration: 1000 },
-  { id: 2, label: `Pulling current ${policy.carrier} rates and product options`, duration: 1400 },
-  { id: 3, label: 'Ranking action items by impact and urgency', duration: 1200 },
-  { id: 4, label: 'Drafting beneficiary designation update letter', duration: 1600 },
-  { id: 5, label: 'Building conversion cost comparison analysis', duration: 1300 },
-  { id: 6, label: 'Generating your personalized action report', duration: 900 },
+  { id: 1, label: 'Reading and parsing policy documents', duration: 900 },
+  { id: 2, label: 'Querying Atidot Nexus — lapse risk & product recommendation', duration: 1200 },
+  { id: 3, label: `Pulling current ${policy.carrier} rates and product options`, duration: 1300 },
+  { id: 4, label: 'Ranking action items by impact and urgency', duration: 1000 },
+  { id: 5, label: 'Drafting beneficiary designation update letter', duration: 1400 },
+  { id: 6, label: 'Building conversion cost comparison analysis', duration: 1200 },
+  { id: 7, label: 'Generating your personalized action report', duration: 800 },
 ];
 
 const AgentModal = ({ policy, onClose }) => {
+  const navigate = useNavigate();
   const [taskStates, setTaskStates] = useState(() =>
     AGENT_TASKS(policy).map((t) => ({ ...t, status: 'pending' }))
   );
@@ -102,9 +105,9 @@ const AgentModal = ({ policy, onClose }) => {
             </div>
             <button
               className="w-full py-3 px-6 bg-accent-amber hover:bg-accent-amber-hover text-brand-dark font-bold rounded-lg transition-colors text-sm"
-              onClick={onClose}
+              onClick={() => { onClose(); navigate(`/report/${policy.id}`); }}
             >
-              View My Action Plan
+              View My Action Plan →
             </button>
           </div>
         )}

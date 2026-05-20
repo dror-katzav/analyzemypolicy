@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FileText, Upload, CheckCircle, Clock, AlertCircle,
@@ -6,8 +6,12 @@ import {
 } from 'lucide-react';
 import AppNav from '../components/AppNav';
 import { parsePolicy } from '../utils/policyParser';
+import { useAuth } from '../context/AuthContext';
+import { usePolicies } from '../context/PoliciesContext';
+import { createDemoPolicy } from '../data/mockData';
 
-const INITIAL_DOCS = [
+// Demo docs shown only for guest/unauthenticated users
+const DEMO_DOCS = [
   {
     id: 'doc-001',
     name: 'MetLife_Policy_Contract.pdf',
@@ -48,6 +52,28 @@ const fmt = (n) =>
 
 const ACCEPTED = '.pdf,.jpg,.jpeg,.png,.doc,.docx';
 
+// ─── Storage helpers ──────────────────────────────────────────────────────────
+
+const docsStorageKey = (user) =>
+  user && !user.isGuest ? `amp_docs_v1_${user.email}` : null;
+
+const loadDocs = (key) => {
+  if (!key) return DEMO_DOCS;
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveDocs = (key, docs) => {
+  if (!key) return;
+  try { localStorage.setItem(key, JSON.stringify(docs)); } catch { /* quota */ }
+};
+
+// ─── Delete confirm modal ─────────────────────────────────────────────────────
+
 function DeleteConfirmModal({ doc, onConfirm, onCancel }) {
   return (
     <div className="fixed inset-0 bg-brand-dark/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -58,8 +84,8 @@ function DeleteConfirmModal({ doc, onConfirm, onCancel }) {
           </div>
           <h3 className="text-white font-bold text-lg mb-1">Remove document?</h3>
           <p className="text-text-secondary text-sm">
-            <span className="text-white font-semibold">{doc.name}</span> will be removed from your library.
-            This does not delete the associated policy from your dashboard.
+            <span className="text-white font-semibold">{doc.name}</span> and its associated policy card will be
+            permanently removed from your library and dashboard.
           </p>
         </div>
         <div className="px-6 pb-6 flex gap-3">
@@ -81,14 +107,31 @@ function DeleteConfirmModal({ doc, onConfirm, onCancel }) {
   );
 }
 
+// ─── Main component ───────────────────────────────────────────────────────────
+
 export default function Documents() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { addPolicy, removePolicy, policies } = usePolicies();
   const fileInputRef = useRef(null);
-  const [docs, setDocs] = useState(INITIAL_DOCS);
+
+  const storageKey = docsStorageKey(user);
+
+  const [docs, setDocs] = useState(() => loadDocs(storageKey));
   const [dragging, setDragging] = useState(false);
-  const [processing, setProcessing] = useState(null); // { name, step, progress }
+  const [processing, setProcessing] = useState(null);
   const [parseError, setParseError] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState(null); // doc to confirm deletion
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+  // Reload docs when user changes (login / logout)
+  useEffect(() => {
+    setDocs(loadDocs(storageKey));
+  }, [storageKey]);
+
+  // Persist whenever docs change (real users only)
+  useEffect(() => {
+    saveDocs(storageKey, docs);
+  }, [docs, storageKey]);
 
   const handleFiles = async (files) => {
     const file = files[0];
@@ -127,10 +170,16 @@ export default function Documents() {
         .filter(Boolean)
         .join(' ') || file.name.replace(/\.[^.]+$/, '');
 
+      // Build a full policy object and add it to PoliciesContext (persisted per user)
+      const baseName = file.name.replace(/\.[^.]+$/, '');
+      const newPolicy = createDemoPolicy(baseName, extracted);
+      newPolicy.name = policyName || newPolicy.name;
+      addPolicy(newPolicy);
+
       setDocs((prev) =>
         prev.map((d) =>
           d.id === tempId
-            ? { ...d, status: 'analyzed', policyName, extracted }
+            ? { ...d, status: 'analyzed', policyName, policyId: newPolicy.id, extracted }
             : d
         )
       );
@@ -149,6 +198,9 @@ export default function Documents() {
   };
 
   const removeDoc = (id) => {
+    // Also remove the linked policy from the dashboard
+    const doc = docs.find((d) => d.id === id);
+    if (doc?.policyId) removePolicy(doc.policyId);
     setDocs((prev) => prev.filter((d) => d.id !== id));
     setDeleteConfirm(null);
   };
@@ -203,7 +255,7 @@ export default function Documents() {
           </div>
         )}
 
-        {/* Drop zone — full when no docs, compact bar when docs exist */}
+        {/* Drop zone */}
         {docs.length === 0 ? (
           <div
             onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
@@ -256,12 +308,10 @@ export default function Documents() {
                 className="bg-brand-slate border border-brand-slate-light rounded-xl overflow-hidden"
               >
                 <div className="flex items-center gap-4 p-4">
-                  {/* Icon */}
                   <div className="w-10 h-10 rounded-xl bg-brand-navy flex items-center justify-center flex-shrink-0">
                     <FileText size={18} className="text-text-secondary" />
                   </div>
 
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-white font-semibold text-sm truncate">{doc.name}</p>

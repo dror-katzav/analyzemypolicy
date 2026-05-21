@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Shield,
@@ -63,6 +63,19 @@ const appendScore = (key, score) => {
   return next;
 };
 
+const getInitialScoreHistory = (key, portfolioScore) => {
+  const hist = loadScoreHistory(key);
+  if (!key || portfolioScore <= 0) return hist;
+  const today = new Date().toISOString().slice(0, 10);
+  const isAlreadyRecorded = hist.some(
+    (e) => e.date === today && e.score === portfolioScore
+  );
+  if (!isAlreadyRecorded) {
+    return appendScore(key, portfolioScore);
+  }
+  return hist;
+};
+
 
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
@@ -97,12 +110,15 @@ const Dashboard = () => {
 
   // ── Score history: record today's score, load for sparkline ──
   const histKey = scoreHistoryKey(user);
-  const [scoreHistory, setScoreHistory] = useState(() => loadScoreHistory(histKey));
-  useEffect(() => {
-    if (histKey && portfolioScore > 0) {
-      setScoreHistory(appendScore(histKey, portfolioScore));
-    }
-  }, [histKey, portfolioScore]);
+  const [scoreHistory, setScoreHistory] = useState(() => getInitialScoreHistory(histKey, portfolioScore));
+
+  const [prevHistKey, setPrevHistKey] = useState(histKey);
+  const [prevPortfolioScore, setPrevPortfolioScore] = useState(portfolioScore);
+  if (histKey !== prevHistKey || portfolioScore !== prevPortfolioScore) {
+    setPrevHistKey(histKey);
+    setPrevPortfolioScore(portfolioScore);
+    setScoreHistory(getInitialScoreHistory(histKey, portfolioScore));
+  }
 
   const cashValuePolicies = policies.filter((p) => p.cashValueSeries?.length > 0);
   const [chartPolicyId, setChartPolicyId] = useState(() => cashValuePolicies[0]?.id ?? null);
@@ -127,8 +143,8 @@ const Dashboard = () => {
     return `Next due ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
   })();
 
-  const highOpps = policies.flatMap((p) => p.opportunities.filter((o) => o.severity === 'high'));
-  const medOpps = policies.flatMap((p) => p.opportunities.filter((o) => o.severity === 'medium'));
+  const highOpps = policies.flatMap((p) => (p.opportunities ?? []).filter((o) => o.severity === 'high'));
+  const medOpps = policies.flatMap((p) => (p.opportunities ?? []).filter((o) => o.severity === 'medium'));
   const subtitleMsg = (() => {
     if (policies.length === 0) return 'Add your first policy to get started.';
     if (highOpps.length > 0) return `${highOpps.length} high-priority action item${highOpps.length > 1 ? 's' : ''} need${highOpps.length === 1 ? 's' : ''} your attention.`;
@@ -356,7 +372,7 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
             {policies.map((policy) => {
               const scoreColor = policy.score >= 80 ? 'text-green-400' : policy.score >= 65 ? 'text-accent-amber' : 'text-red-400';
-              const urgentMilestone = policy.milestones.find((m) => m.isUrgent);
+              const urgentMilestone = (policy.milestones ?? []).find((m) => m.isUrgent);
               return (
                 <div
                   key={policy.id}
@@ -381,7 +397,7 @@ const Dashboard = () => {
                     <div className="flex flex-col items-end gap-1 text-right">
                       <ScoreRing score={policy.score} size={40} />
                       <span className={`text-[10px] font-bold ${scoreColor}`}>{policy.scoreLabel}</span>
-                      {policy.score < 80 && policy.opportunities[0] && (
+                      {policy.score < 80 && policy.opportunities?.[0] && (
                         <span className="text-[9px] text-text-muted max-w-[90px] leading-tight">{policy.opportunities[0].title}</span>
                       )}
                     </div>
@@ -408,7 +424,7 @@ const Dashboard = () => {
 
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-text-muted">
-                      {policy.opportunities.length} {policy.opportunities.length === 1 ? 'opportunity' : 'opportunities'} identified
+                      {(policy.opportunities ?? []).length} {(policy.opportunities ?? []).length === 1 ? 'opportunity' : 'opportunities'} identified
                     </span>
                     <span className="flex items-center gap-1 text-xs text-accent-amber font-semibold group-hover:translate-x-0.5 transition-transform">
                       View analysis <ChevronRight size={14} />

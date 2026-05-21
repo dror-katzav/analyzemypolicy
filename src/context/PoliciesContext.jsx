@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { MOCK_POLICIES, PORTFOLIO_CASH_VALUE } from '../data/mockData';
 import { useAuth } from './AuthContext';
 
@@ -54,15 +55,12 @@ export const PoliciesProvider = ({ children }) => {
   });
 
   // Reload whenever the logged-in user changes (login / logout / switch account)
-  useEffect(() => {
-    if (!storageKey) {
-      // Guest or logged out → show demo data
-      setPolicies(MOCK_POLICIES);
-    } else {
-      // Real user → their own saved policies ([] on first login)
-      setPolicies(loadFromStorage(storageKey) ?? []);
-    }
-  }, [storageKey]);
+  // Standard React pattern: adjusting state directly during render when prop/context dependency changes
+  const [prevStorageKey, setPrevStorageKey] = useState(storageKey);
+  if (storageKey !== prevStorageKey) {
+    setPrevStorageKey(storageKey);
+    setPolicies(storageKey ? (loadFromStorage(storageKey) ?? []) : MOCK_POLICIES);
+  }
 
   const addPolicy = useCallback((policy) => {
     setPolicies((prev) => {

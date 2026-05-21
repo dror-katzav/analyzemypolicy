@@ -213,7 +213,7 @@ const Report = () => {
       if (!cancelled) setNexusData(data);
     });
     return () => { cancelled = true; };
-  }, [policy?.id]);
+  }, [policy]);
 
   const severityBadge = (severity) => {
     if (severity === 'high') return 'bg-red-500/10 text-red-400 border-red-500/20';

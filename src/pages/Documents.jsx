@@ -188,7 +188,7 @@ export default function Documents() {
             : d
         )
       );
-    } catch (err) {
+    } catch {
       clearInterval(ticker);
       setProcessing(null);
       setParseError('Could not parse this document. Please try a PDF or image of your policy.');

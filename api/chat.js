@@ -1,3 +1,4 @@
+/* global process */
 /**
  * /api/chat — Vercel serverless proxy for LLM API calls.
  *

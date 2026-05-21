@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import { usePolicies } from './PoliciesContext';
@@ -224,16 +225,19 @@ export const AIChatProvider = ({ children }) => {
   const [sessions, setSessions] = useState(() => loadSessions(key));
   const [activeSid, setActiveSid] = useState(() => {
     const initial = loadSessions(key);
-    return initial[0]?.id ?? 'sess-1';
+    return initial[0]?.id ?? 'sess-welcome';
   });
   const [isTyping, setIsTyping] = useState(false);
 
   // Reload sessions when user changes
-  useEffect(() => {
+  // Standard React pattern: adjusting state directly during render when prop/context dependency changes
+  const [prevKey, setPrevKey] = useState(key);
+  if (key !== prevKey) {
+    setPrevKey(key);
     const next = loadSessions(key);
     setSessions(next);
     setActiveSid(next[0]?.id ?? 'sess-welcome');
-  }, [key]);
+  }
 
   // Persist sessions whenever they change (real users only)
   useEffect(() => {
@@ -303,7 +307,7 @@ export const AIChatProvider = ({ children }) => {
     );
 
     setIsTyping(false);
-  }, [activeSid, isTyping]);
+  }, [activeSid, isTyping, activeSession, systemPrompt]);
 
   return (
     <AIChatContext.Provider value={{

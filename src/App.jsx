@@ -7,6 +7,7 @@ import Report from './pages/Report';
 import Documents from './pages/Documents';
 import Advisor from './pages/Advisor';
 import Security from './pages/Security';
+import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import { useAuth } from './context/AuthContext';
 import { AIChatProvider } from './context/AIChatContext';
@@ -20,6 +21,7 @@ const PAGE_TITLES = {
   '/documents': 'Documents — AnalyzeMyPolicy',
   '/advisor': 'Advisor — AnalyzeMyPolicy',
   '/security': 'Security & Privacy — AnalyzeMyPolicy',
+  '/settings': 'Settings — AnalyzeMyPolicy',
 };
 
 function TitleManager() {
@@ -66,6 +68,7 @@ function App() {
           <Route path="/advisor" element={<ProtectedRoute><Advisor /></ProtectedRoute>} />
           <Route path="/report/:id" element={<ProtectedRoute><Report /></ProtectedRoute>} />
           <Route path="/security" element={<PublicRoute><Security /></PublicRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="*" element={<PublicRoute><NotFound /></PublicRoute>} />
         </Routes>
         <AuthSidebar />

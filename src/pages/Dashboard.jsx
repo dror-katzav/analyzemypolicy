@@ -1,27 +1,67 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Shield,
   TrendingUp,
   DollarSign,
   Calendar,
-  AlertTriangle,
   ChevronRight,
-  Clock,
   CheckCircle,
-  Info,
-  X,
   Zap,
+  Calculator,
 } from 'lucide-react';
 import AppNav from '../components/AppNav';
 import { useAuth } from '../context/AuthContext';
 import { usePolicies } from '../context/PoliciesContext';
-import { PORTFOLIO_SUMMARY } from '../data/mockData';
 import { fmt, urgencyBadge, urgencyIcon } from '../utils/formatters';
 import ScoreRing from '../components/ScoreRing';
 import CashValueChart from '../components/CashValueChart';
 import PremiumModal from '../components/PremiumModal';
 import PortfolioScoreModal from '../components/PortfolioScoreModal';
+import OnboardingModal from '../components/OnboardingModal';
+import CoverageCalculatorModal from '../components/CoverageCalculatorModal';
+
+// ─── Score sparkline ──────────────────────────────────────────────────────────
+
+const Sparkline = ({ data }) => {
+  if (!data || data.length < 2) return null;
+  const scores = data.map((d) => d.score);
+  const min = Math.min(...scores);
+  const max = Math.max(...scores);
+  const range = max - min || 1;
+  const W = 48, H = 16;
+  const pts = scores
+    .map((s, i) => `${(i / (scores.length - 1)) * W},${H - ((s - min) / range) * H}`)
+    .join(' ');
+  const trend = scores[scores.length - 1] - scores[0];
+  const color = trend >= 0 ? '#22c55e' : '#f87171';
+  return (
+    <svg width={W} height={H} className="opacity-70">
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+};
+
+// ─── Score history helpers ────────────────────────────────────────────────────
+
+const scoreHistoryKey = (user) =>
+  user && !user.isGuest ? `amp_score_history_v1_${user.email}` : null;
+
+const loadScoreHistory = (key) => {
+  if (!key) return [];
+  try { return JSON.parse(localStorage.getItem(key) ?? '[]'); } catch { return []; }
+};
+
+const appendScore = (key, score) => {
+  if (!key) return [];
+  const today = new Date().toISOString().slice(0, 10);
+  const hist = loadScoreHistory(key);
+  // Replace today's entry or append
+  const filtered = hist.filter((e) => e.date !== today);
+  const next = [...filtered, { date: today, score }].slice(-30);
+  try { localStorage.setItem(key, JSON.stringify(next)); } catch { /* quota */ }
+  return next;
+};
 
 
 
@@ -42,6 +82,27 @@ const Dashboard = () => {
   } = usePolicies();
   const [showScoreModal, setShowScoreModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showCalculator, setShowCalculator] = useState(false);
+
+  // ── Onboarding: show once for new real users with no policies ──
+  const onboardingKey = user && !user.isGuest ? `amp_onboarding_${user.email}` : null;
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    if (!onboardingKey) return false;
+    return !localStorage.getItem(onboardingKey);
+  });
+  const dismissOnboarding = () => {
+    if (onboardingKey) localStorage.setItem(onboardingKey, '1');
+    setShowOnboarding(false);
+  };
+
+  // ── Score history: record today's score, load for sparkline ──
+  const histKey = scoreHistoryKey(user);
+  const [scoreHistory, setScoreHistory] = useState(() => loadScoreHistory(histKey));
+  useEffect(() => {
+    if (histKey && portfolioScore > 0) {
+      setScoreHistory(appendScore(histKey, portfolioScore));
+    }
+  }, [histKey, portfolioScore]);
 
   const cashValuePolicies = policies.filter((p) => p.cashValueSeries?.length > 0);
   const [chartPolicyId, setChartPolicyId] = useState(() => cashValuePolicies[0]?.id ?? null);
@@ -165,6 +226,11 @@ const Dashboard = () => {
                     <p className="text-white font-bold text-xl md:text-2xl leading-none">{card.value}</p>
                     <p className="text-text-muted text-xs mt-0.5">/100</p>
                   </div>
+                  {scoreHistory.length >= 2 && (
+                    <div className="ml-auto">
+                      <Sparkline data={scoreHistory} />
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p className="text-white font-bold text-xl md:text-2xl leading-tight">{card.value}</p>
@@ -363,12 +429,20 @@ const Dashboard = () => {
               Upload a policy document, illustration, or statement to get a full analysis.
             </p>
           </div>
-          <button
-            className="flex-shrink-0 px-5 py-2.5 md:px-6 md:py-3 bg-accent-amber hover:bg-accent-amber-hover text-brand-dark font-bold rounded-lg transition-colors text-sm"
-            onClick={() => navigate('/analyze')}
-          >
-            + Analyze a Policy
-          </button>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <button
+              className="flex items-center gap-1.5 px-4 py-2.5 border border-brand-slate-light hover:border-accent-amber/40 text-text-secondary hover:text-white rounded-lg transition-colors text-sm font-semibold"
+              onClick={() => setShowCalculator(true)}
+            >
+              <Calculator size={15} /> Coverage Calculator
+            </button>
+            <button
+              className="px-5 py-2.5 md:px-6 md:py-3 bg-accent-amber hover:bg-accent-amber-hover text-brand-dark font-bold rounded-lg transition-colors text-sm"
+              onClick={() => navigate('/analyze')}
+            >
+              + Analyze a Policy
+            </button>
+          </div>
         </div>
 
       </div>
@@ -396,6 +470,19 @@ const Dashboard = () => {
           policies={policies}
           onClose={() => setShowPremiumModal(false)}
         />
+      )}
+
+      {/* Coverage Gap Calculator */}
+      {showCalculator && (
+        <CoverageCalculatorModal
+          currentCoverage={totalCoverage}
+          onClose={() => setShowCalculator(false)}
+        />
+      )}
+
+      {/* First-run onboarding */}
+      {showOnboarding && policies.length === 0 && (
+        <OnboardingModal onClose={dismissOnboarding} />
       )}
     </div>
   );

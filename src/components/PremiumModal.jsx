@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, DollarSign, ExternalLink, CheckCircle, Clock, CreditCard, Bell } from 'lucide-react';
+import { usePolicies } from '../context/PoliciesContext';
 
 // Carrier portal URLs
 const CARRIER_PORTALS = {
@@ -21,10 +22,25 @@ const CARRIER_PHONES = {
 };
 
 const PremiumModal = ({ nextPremium, policies, onClose }) => {
+  const { updatePolicy } = usePolicies();
   const policy =
     policies.find((p) => p.shortName === nextPremium?.policyName || p.id === nextPremium?.policyId) ??
     policies[0];
   const [paid, setPaid] = useState(false);
+
+  const handleMarkPaid = () => {
+    // Flip the matching premium milestone to isPast so it no longer appears
+    // in Upcoming Events or nextPremium on the dashboard.
+    if (policy && nextPremium?.date) {
+      const updatedMilestones = (policy.milestones ?? []).map((m) =>
+        m.type === 'premium' && m.date === nextPremium.date
+          ? { ...m, isPast: true }
+          : m
+      );
+      updatePolicy(policy.id, { milestones: updatedMilestones });
+    }
+    setPaid(true);
+  };
 
   const daysAway = nextPremium
     ? Math.round(
@@ -175,7 +191,7 @@ const PremiumModal = ({ nextPremium, policies, onClose }) => {
             Remind Me Later
           </button>
           <button
-            onClick={() => setPaid(true)}
+            onClick={handleMarkPaid}
             className="flex-1 py-2.5 bg-green-500/15 hover:bg-green-500/25 text-green-400 border border-green-500/25 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2"
           >
             <CheckCircle size={15} /> Mark as Paid

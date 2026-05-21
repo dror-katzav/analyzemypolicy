@@ -434,6 +434,22 @@ const Report = () => {
                       <div className="px-4 pb-5 border-t border-brand-slate-light bg-brand-navy/30">
                         <p className="text-text-secondary text-sm mt-4 leading-relaxed">{opp.description}</p>
                         <div className="flex flex-wrap gap-2 mt-4">
+                          {opp.cta && (
+                            <button
+                              className="flex items-center gap-1.5 px-4 py-2 bg-accent-amber hover:bg-accent-amber-hover text-brand-dark text-xs font-bold rounded-lg transition-colors"
+                              onClick={() => {
+                                if (opp.cta === 'Compare Rates Now' || opp.cta === 'Get a Better Quote') {
+                                  window.open('https://www.policygenius.com/?utm_source=analyzemypolicy', '_blank', 'noopener');
+                                } else if (opp.cta === 'Get Conversion Quote') {
+                                  setShowAgentModal(true);
+                                } else {
+                                  openChat();
+                                }
+                              }}
+                            >
+                              {opp.cta}
+                            </button>
+                          )}
                           <button
                             className="flex items-center gap-1.5 px-4 py-2 bg-transparent border border-brand-slate-light hover:border-accent-amber/40 text-text-secondary hover:text-white text-xs font-semibold rounded-lg transition-colors"
                             onClick={() => setShowEmailModal(true)}

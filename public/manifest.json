@@ -1,0 +1,31 @@
+{
+  "name": "AnalyzeMyPolicy",
+  "short_name": "AMP",
+  "description": "Monitor and optimize your life insurance portfolio with AI-powered insights.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
+  "theme_color": "#f59e0b",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/dashboard",
+      "description": "View your policy portfolio"
+    },
+    {
+      "name": "Analyze a Policy",
+      "url": "/analyze",
+      "description": "Upload and analyze a new policy"
+    }
+  ]
+}

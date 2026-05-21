@@ -174,7 +174,12 @@ export default function Documents() {
       const baseName = file.name.replace(/\.[^.]+$/, '');
       const newPolicy = createDemoPolicy(baseName, extracted);
       newPolicy.name = policyName || newPolicy.name;
-      addPolicy(newPolicy);
+
+      // Deduplicate: skip if a policy with the same name already exists
+      const isDuplicate = policies.some(
+        (p) => p.name.toLowerCase() === newPolicy.name.toLowerCase()
+      );
+      if (!isDuplicate) addPolicy(newPolicy);
 
       setDocs((prev) =>
         prev.map((d) =>

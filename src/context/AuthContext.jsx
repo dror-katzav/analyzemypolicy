@@ -46,6 +46,22 @@ export const AuthProvider = ({ children }) => {
     persist(u);
   };
 
+  const updateUser = (updates) => {
+    const updated = { ...user, ...updates };
+    persist(updated);
+  };
+
+  const deleteAccount = () => {
+    // Clear all user-scoped data
+    if (user?.email) {
+      ['amp_policies_v2_', 'amp_chat_v2_', 'amp_docs_v1_', 'amp_score_history_v1_', 'amp_onboarding_'].forEach((prefix) => {
+        localStorage.removeItem(prefix + user.email);
+      });
+    }
+    setUser(null);
+    localStorage.removeItem('amp_user');
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('amp_user');
@@ -57,7 +73,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, googleLogin, signup, loginAsGuest, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, googleLogin, signup, loginAsGuest, logout, updateUser, deleteAccount, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

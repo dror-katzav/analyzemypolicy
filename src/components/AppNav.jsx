@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Shield, Plus, LogOut, Sun, Moon, MessageCircle, Menu, X } from 'lucide-react';
+import { Shield, Plus, LogOut, Sun, Moon, MessageCircle, Menu, X, Bell, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAIChat } from '../context/AIChatContext';
+import { usePolicies } from '../context/PoliciesContext';
 
 const NAV_LINKS = [
   { label: 'Dashboard', path: '/dashboard' },
@@ -17,7 +18,19 @@ const AppNav = ({ variant = 'dashboard' }) => {
   const { user, logout } = useAuth();
   const { isDark, toggle } = useTheme();
   const { toggle: toggleChat } = useAIChat();
+  const { upcomingEvents } = usePolicies();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [bellOpen, setBellOpen] = useState(false);
+  const bellRef = useRef(null);
+
+  // Close bell dropdown on outside click
+  useEffect(() => {
+    const handler = (e) => { if (bellRef.current && !bellRef.current.contains(e.target)) setBellOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const urgentCount = upcomingEvents.filter((e) => e.daysAway <= 7).length;
 
   const handleLogout = () => {
     logout();
@@ -91,6 +104,61 @@ const AppNav = ({ variant = 'dashboard' }) => {
             <span className="hidden sm:inline">Ask AI</span>
           </button>
 
+          {/* Notification bell */}
+          <div ref={bellRef} className="relative">
+            <button
+              onClick={() => setBellOpen((v) => !v)}
+              className="relative w-9 h-9 rounded-lg flex items-center justify-center text-text-secondary hover:text-white hover:bg-brand-slate-light/40 transition-colors"
+              title="Notifications"
+            >
+              <Bell size={17} />
+              {urgentCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border border-brand-slate" />
+              )}
+            </button>
+            {bellOpen && (
+              <div className="absolute right-0 top-full mt-2 w-80 bg-brand-slate border border-brand-slate-light rounded-xl shadow-2xl z-50 overflow-hidden">
+                <div className="px-4 py-3 border-b border-brand-slate-light flex items-center justify-between">
+                  <p className="text-white font-bold text-sm">Notifications</p>
+                  {urgentCount > 0 && (
+                    <span className="px-2 py-0.5 bg-red-500/15 text-red-400 text-[10px] font-bold rounded-full">{urgentCount} urgent</span>
+                  )}
+                </div>
+                {upcomingEvents.length === 0 ? (
+                  <div className="px-4 py-6 text-center text-text-muted text-sm">No upcoming events</div>
+                ) : (
+                  <div className="max-h-72 overflow-y-auto">
+                    {upcomingEvents.map((ev) => (
+                      <button
+                        key={ev.id}
+                        onClick={() => { navigate(`/report/${ev.policyId}`); setBellOpen(false); }}
+                        className="w-full flex items-start gap-3 px-4 py-3 hover:bg-brand-navy/60 transition-colors border-b border-brand-slate-light/40 last:border-0 text-left"
+                      >
+                        <div className={`mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase flex-shrink-0 ${
+                          ev.daysAway <= 3 ? 'bg-red-500/15 text-red-400' : ev.daysAway <= 7 ? 'bg-amber-500/15 text-accent-amber' : 'bg-blue-500/15 text-blue-400'
+                        }`}>
+                          {ev.daysAway <= 0 ? 'TODAY' : `${ev.daysAway}d`}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm text-white font-medium leading-snug">{ev.label}</p>
+                          <p className="text-xs text-text-muted mt-0.5 truncate">{ev.detail}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="px-4 py-2.5 border-t border-brand-slate-light">
+                  <button
+                    onClick={() => { navigate('/dashboard'); setBellOpen(false); }}
+                    className="text-xs text-accent-amber hover:underline font-semibold"
+                  >
+                    View all on dashboard →
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Theme toggle */}
           <button
             onClick={toggle}
@@ -98,6 +166,15 @@ const AppNav = ({ variant = 'dashboard' }) => {
             title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             {isDark ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
+
+          {/* Settings — desktop */}
+          <button
+            onClick={() => navigate('/settings')}
+            className="hidden md:flex w-9 h-9 rounded-lg items-center justify-center text-text-secondary hover:text-white hover:bg-brand-slate-light/40 transition-colors"
+            title="Settings"
+          >
+            <Settings size={17} />
           </button>
 
           {/* User avatar + logout — desktop */}
@@ -162,6 +239,16 @@ const AppNav = ({ variant = 'dashboard' }) => {
               </button>
             </div>
           )}
+
+          {/* Settings — mobile */}
+          <div className="px-4 py-2 border-b border-brand-slate-light">
+            <button
+              onClick={() => { navigate('/settings'); setMobileOpen(false); }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-text-secondary hover:text-white hover:bg-brand-slate-light/40 transition-colors"
+            >
+              <Settings size={15} /> Settings
+            </button>
+          </div>
 
           {/* User row */}
           <div className="px-4 py-3 flex items-center justify-between">

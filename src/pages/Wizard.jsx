@@ -13,7 +13,7 @@ const LIFE_CHANGES = [
 
 const Wizard = () => {
   const navigate = useNavigate();
-  const { addPolicy } = usePolicies();
+  const { addPolicy, policies } = usePolicies();
   const { user } = useAuth();
   const bottomRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -270,7 +270,10 @@ const Wizard = () => {
     // Build policy from real extracted data if available, otherwise use demo template
     const baseName = uploadedFile ? uploadedFile.name.replace(/\.[^.]+$/, '') : null;
     const newPolicy = createDemoPolicy(baseName, extractedData);
-    addPolicy(newPolicy);
+    const isDuplicate = policies.some(
+      (p) => p.name.toLowerCase() === newPolicy.name.toLowerCase()
+    );
+    if (!isDuplicate) addPolicy(newPolicy);
 
     setMessages(prev => [
       ...prev.filter(m => !m.isLoadingSim),

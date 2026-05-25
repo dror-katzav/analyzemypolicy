@@ -4,7 +4,7 @@ import {
   Shield, DollarSign, Calendar, CheckCircle, Clock,
   TrendingUp, Mail, Zap, ChevronDown, ChevronUp,
   Bot, Info, X, AlertTriangle, Sparkles, Download,
-  FileText, BarChart2, Users, FileCheck,
+  FileText, BarChart2, Users, FileCheck, ThumbsUp, ThumbsDown,
 } from 'lucide-react';
 import AppNav from '../components/AppNav';
 import { useAuth } from '../context/AuthContext';
@@ -103,17 +103,46 @@ const DownloadDocsModal = ({ policy, onClose }) => {
 
 // ─── Nexus Intelligence Card ──────────────────────────────────────────────────
 
-const NexusCard = ({ nexusData }) => {
-  if (!nexusData) return null;
-  const { lapse, recommendation } = nexusData;
-  const rc = riskColor(lapse.risk_score);
+const NEXUS_SIGNALS = {
+  Low: [
+    { ok: true,  text: 'Premium-to-coverage ratio is strong for this policy type' },
+    { ok: true,  text: 'Cash value growth is on track compared to similar policyholders' },
+    { ok: true,  text: 'This policy is well-suited to your current profile' },
+  ],
+  Medium: [
+    { ok: false, text: 'Some people like you have found better-value alternatives recently' },
+    { ok: false, text: 'Market conditions may have shifted since this policy was issued' },
+    { ok: true,  text: 'Coverage level is appropriate for your income and dependent profile' },
+  ],
+  High: [
+    { ok: false, text: 'This policy may not be meeting your long-term financial goals' },
+    { ok: false, text: 'Many people like you have upgraded or restructured their coverage' },
+    { ok: false, text: 'Premium efficiency has meaningful room for improvement' },
+  ],
+};
 
-  const horizonYears = ['Year 1', 'Year 2', 'Year 3'];
-  const horizonVals = [
-    lapse.horizon_scores?.lapse_0,
-    lapse.horizon_scores?.lapse_1,
-    lapse.horizon_scores?.lapse_2,
-  ];
+const NEXUS_VERDICT = {
+  Low:    { color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20', label: 'Looks like a keeper', detail: 'Based on your profile and current market conditions, this policy is working well for you. No urgent action required.' },
+  Medium: { color: 'text-accent-amber', bg: 'bg-amber-500/10', border: 'border-amber-500/20', label: 'Worth a second look', detail: 'A few signals suggest this policy could be optimised. It\'s not urgent, but reviewing your options now costs nothing.' },
+  High:   { color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', label: 'Reconsider this policy', detail: 'Multiple signals indicate this policy may no longer be the best fit. Taking action soon could save money and improve coverage.' },
+};
+
+const NexusCard = ({ nexusData }) => {
+  if (!nexusData) return (
+    <div className="bg-brand-slate border border-brand-slate-light rounded-xl p-5 md:p-6 animate-pulse">
+      <div className="h-4 w-48 bg-brand-navy rounded mb-4" />
+      <div className="h-20 bg-brand-navy rounded" />
+    </div>
+  );
+
+  const { lapse, recommendation } = nexusData;
+  const signals = NEXUS_SIGNALS[lapse.risk_score] ?? NEXUS_SIGNALS.Medium;
+  const verdict = NEXUS_VERDICT[lapse.risk_score] ?? NEXUS_VERDICT.Medium;
+
+  // Replace "Peer cohort analysis" with "people like you" in the rationale
+  const rationale = recommendation.rationale
+    .replace(/Peer cohort analysis suggests/gi, 'People like you show')
+    .replace(/peer cohort/gi, 'people like you');
 
   return (
     <div className="bg-brand-slate border border-brand-slate-light rounded-xl p-5 md:p-6">
@@ -121,64 +150,60 @@ const NexusCard = ({ nexusData }) => {
         <span className="w-5 h-5 rounded bg-blue-500/20 flex items-center justify-center">
           <BarChart2 size={12} className="text-blue-400" />
         </span>
-        Atidot Nexus Intelligence
+        Should You Keep This Policy?
         <span className="ml-auto text-[10px] font-normal text-text-muted bg-brand-navy px-2 py-0.5 rounded-full border border-brand-slate-light">
           {lapse.source === 'nexus' ? '● Live' : '● Simulated'}
         </span>
       </h2>
 
+      {/* Verdict banner */}
+      <div className={`flex items-start gap-3 p-4 rounded-xl border mb-4 ${verdict.bg} ${verdict.border}`}>
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${verdict.bg} border ${verdict.border}`}>
+          {lapse.risk_score === 'Low'
+            ? <CheckCircle size={18} className={verdict.color} />
+            : lapse.risk_score === 'Medium'
+            ? <Clock size={18} className={verdict.color} />
+            : <AlertTriangle size={18} className={verdict.color} />}
+        </div>
+        <div>
+          <p className={`font-bold text-sm ${verdict.color}`}>{verdict.label}</p>
+          <p className="text-text-secondary text-xs mt-0.5 leading-relaxed">{verdict.detail}</p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Lapse Risk */}
-        <div className={`p-4 rounded-xl border ${rc.bg} ${rc.border}`}>
-          <p className="text-xs text-text-muted uppercase font-semibold tracking-wider mb-2">Lapse Risk</p>
-          <div className="flex items-end gap-2 mb-2">
-            <p className={`text-2xl font-bold ${rc.text}`}>{lapse.risk_score}</p>
-            <p className={`text-sm font-semibold mb-0.5 ${rc.text}`}>
-              {Math.round(lapse.lapse_probability * 100)}%
-            </p>
-          </div>
-          {/* Horizon bar chart */}
-          <div className="flex items-end gap-2 h-8 mt-3">
-            {horizonVals.map((v, i) => (
-              <div key={i} className="flex flex-col items-center flex-1 gap-1">
-                <div
-                  className={`w-full rounded-sm ${rc.bg} border ${rc.border}`}
-                  style={{ height: `${Math.max(4, (v ?? 0) * 100)}%`, minHeight: 4 }}
-                />
-                <span className="text-[9px] text-text-muted">{horizonYears[i]}</span>
+        {/* Signals */}
+        <div className="p-4 bg-brand-navy rounded-xl border border-brand-slate-light">
+          <p className="text-xs text-text-muted uppercase font-semibold tracking-wider mb-3">Policy Signals</p>
+          <div className="space-y-2.5">
+            {signals.map((s, i) => (
+              <div key={i} className="flex items-start gap-2">
+                {s.ok
+                  ? <CheckCircle size={13} className="text-green-400 flex-shrink-0 mt-0.5" />
+                  : <AlertTriangle size={13} className="text-accent-amber flex-shrink-0 mt-0.5" />}
+                <span className="text-xs text-text-secondary leading-snug">{s.text}</span>
               </div>
             ))}
           </div>
-          <p className="text-[11px] text-text-muted mt-2 leading-snug">
-            {lapse.risk_score === 'Low'
-              ? 'Policy is stable — low lapse probability across all horizons.'
-              : lapse.risk_score === 'Medium'
-              ? 'Moderate risk — conversion or coverage changes are recommended.'
-              : 'High lapse risk — action needed to maintain coverage.'}
-          </p>
         </div>
 
-        {/* Recommendation */}
+        {/* What people like you are doing */}
         <div className="p-4 bg-blue-500/5 rounded-xl border border-blue-500/20">
-          <p className="text-xs text-text-muted uppercase font-semibold tracking-wider mb-2">Nexus Recommendation</p>
+          <p className="text-xs text-text-muted uppercase font-semibold tracking-wider mb-3">What People Like You Are Doing</p>
           <div className="flex flex-wrap gap-2 mb-3">
             <span className="px-2.5 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-xs font-bold text-blue-400">
-              {recommendation.policy_family === 'WL' ? 'Whole Life' : recommendation.policy_family}
+              {recommendation.policy_family === 'WL' ? 'Moving to Whole Life' : recommendation.policy_family}
             </span>
-            <span className="px-2.5 py-1 bg-brand-navy border border-brand-slate-light rounded-full text-xs text-text-secondary">
+            <span className="px-2.5 py-1 bg-brand-slate border border-brand-slate-light rounded-full text-xs text-text-secondary">
               {recommendation.rec_face_band}
             </span>
-            <span className="px-2.5 py-1 bg-brand-navy border border-brand-slate-light rounded-full text-xs text-text-secondary">
-              {recommendation.rec_premium_band}
-            </span>
           </div>
-          <p className="text-xs text-text-secondary leading-relaxed">{recommendation.rationale}</p>
+          <p className="text-xs text-text-secondary leading-relaxed">{rationale}</p>
         </div>
       </div>
 
       <p className="text-[10px] text-text-muted mt-3">
-        Powered by{' '}
-        <span className="font-semibold text-blue-400">Atidot Nexus</span> — ML lapse prediction &amp; product recommender
+        Powered by <span className="font-semibold text-blue-400">Atidot Nexus</span> — portfolio intelligence for life insurance
       </p>
     </div>
   );
@@ -220,13 +245,6 @@ const Report = () => {
     if (severity === 'medium') return 'bg-amber-500/10 text-accent-amber border-amber-500/20';
     return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
   };
-
-  const scoreBreakdown = policy ? [
-    { label: 'Coverage Adequacy', value: policy.score >= 80 ? 92 : 78, color: '#22c55e' },
-    { label: 'Premium Efficiency', value: policy.score >= 80 ? 85 : 72, color: '#f59e0b' },
-    { label: 'Beneficiary & Legal', value: policy.score >= 80 ? 70 : 58, color: '#f59e0b' },
-    { label: 'Policy Structure', value: policy.score >= 80 ? 88 : 75, color: '#22c55e' },
-  ] : [];
 
   // Guard: no policy found (e.g. real user with no uploaded policies yet)
   if (!policy) {
@@ -350,40 +368,120 @@ const Report = () => {
             <p className="text-text-secondary leading-relaxed text-sm">{policy.summary}</p>
           </div>
 
-          {/* Score breakdown */}
-          <div className="bg-brand-slate border border-brand-slate-light rounded-xl p-5 md:p-6">
-            <h2 className="text-white font-bold mb-4 md:mb-5 flex items-center gap-2 text-sm md:text-base">
-              <Shield size={17} className="text-text-muted" /> Score Breakdown
-            </h2>
-            <div className="space-y-4">
-              {scoreBreakdown.map((item) => (
-                <div key={item.label}>
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-text-secondary">{item.label}</span>
-                    <span className="font-bold text-white">{item.value}/100</span>
+          {/* Policy Health Check */}
+          {(() => {
+            // Profile fit: simple three-dimension assessment
+            const premiumRate = (policy.premium * 12) / policy.faceAmount * 1000; // per-mille
+            const fitDimensions = [
+              {
+                label: 'Premium Efficiency',
+                ok: premiumRate < 2.5,
+                note: premiumRate < 1.5
+                  ? 'Excellent value — very low cost per dollar of coverage'
+                  : premiumRate < 2.5
+                  ? 'Competitive — within typical market range'
+                  : 'Higher than average — market alternatives worth checking',
+              },
+              {
+                label: 'Coverage Level',
+                ok: policy.faceAmount >= 500_000,
+                note: policy.faceAmount >= 1_000_000
+                  ? 'Substantial coverage — well-positioned for income protection'
+                  : policy.faceAmount >= 500_000
+                  ? 'Adequate for most income replacement scenarios'
+                  : 'May be below recommended levels for your income profile',
+              },
+              {
+                label: 'Policy Type Fit',
+                ok: true,
+                note: policy.type === 'Whole Life'
+                  ? 'Permanent coverage — ideal for long-term wealth and estate planning'
+                  : policy.type === 'Term Life'
+                  ? 'Term coverage — right tool for income replacement during earning years'
+                  : 'Flexible coverage type suited to your profile',
+              },
+            ];
+            const fitScore = Math.round(
+              (policy.score * 0.5) +
+              (fitDimensions.filter(d => d.ok).length / fitDimensions.length) * 50
+            );
+            const fitLabel = fitScore >= 80 ? 'Strong Fit' : fitScore >= 65 ? 'Good Fit' : 'Moderate Fit';
+            const fitColor = fitScore >= 80 ? 'text-green-400' : fitScore >= 65 ? 'text-accent-amber' : 'text-red-400';
+
+            return (
+              <div className="bg-brand-slate border border-brand-slate-light rounded-xl p-5 md:p-6">
+                <h2 className="text-white font-bold mb-4 md:mb-5 flex items-center gap-2 text-sm md:text-base">
+                  <Shield size={17} className="text-text-muted" /> Policy Health Check
+                </h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+                  {/* What's working */}
+                  <div className="md:col-span-1 p-4 bg-green-500/5 border border-green-500/15 rounded-xl">
+                    <div className="flex items-center gap-2 mb-3">
+                      <ThumbsUp size={13} className="text-green-400" />
+                      <p className="text-xs font-semibold text-green-400 uppercase tracking-wider">What's Working</p>
+                    </div>
+                    <ul className="space-y-2">
+                      {policy.strengths.slice(0, 3).map((s, i) => (
+                        <li key={i} className="flex items-start gap-2 text-xs text-text-secondary leading-snug">
+                          <CheckCircle size={11} className="text-green-400 flex-shrink-0 mt-0.5" /> {s}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <div className="h-2 bg-brand-navy rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${item.value}%`, backgroundColor: item.color }}
-                    />
+
+                  {/* Concerns */}
+                  <div className="md:col-span-1 p-4 bg-amber-500/5 border border-amber-500/15 rounded-xl">
+                    <div className="flex items-center gap-2 mb-3">
+                      <ThumbsDown size={13} className="text-accent-amber" />
+                      <p className="text-xs font-semibold text-accent-amber uppercase tracking-wider">Concerns</p>
+                    </div>
+                    <ul className="space-y-2">
+                      {policy.opportunities.slice(0, 3).map((o) => (
+                        <li key={o.id} className="flex items-start gap-2 text-xs text-text-secondary leading-snug">
+                          <span className={`inline-block w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${
+                            o.severity === 'high' ? 'bg-red-400' : o.severity === 'medium' ? 'bg-accent-amber' : 'bg-blue-400'
+                          }`} />
+                          {o.title}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Profile fit */}
+                  <div className="md:col-span-1 p-4 bg-blue-500/5 border border-blue-500/15 rounded-xl">
+                    <div className="flex items-center gap-2 mb-3">
+                      <BarChart2 size={13} className="text-blue-400" />
+                      <p className="text-xs font-semibold text-blue-400 uppercase tracking-wider">Profile Fit</p>
+                    </div>
+                    <p className={`text-2xl font-bold mb-1 ${fitColor}`}>{fitLabel}</p>
+                    <div className="space-y-1.5 mt-2">
+                      {fitDimensions.map((d) => (
+                        <div key={d.label} className="flex items-center gap-1.5">
+                          {d.ok
+                            ? <CheckCircle size={11} className="text-green-400 flex-shrink-0" />
+                            : <AlertTriangle size={11} className="text-accent-amber flex-shrink-0" />}
+                          <span className="text-[11px] text-text-muted">{d.label}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-            {policy.strengths.length > 0 && (
-              <div className="mt-5 md:mt-6">
-                <p className="text-xs text-text-muted uppercase font-semibold tracking-wider mb-3">Strengths</p>
-                <ul className="space-y-2">
-                  {policy.strengths.map((s, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-text-secondary">
-                      <CheckCircle size={14} className="text-green-400 mt-0.5 flex-shrink-0" /> {s}
-                    </li>
+
+                {/* Fit dimension detail */}
+                <div className="border-t border-brand-slate-light pt-4 space-y-2">
+                  {fitDimensions.map((d) => (
+                    <div key={d.label} className="flex items-start gap-2 text-xs text-text-secondary">
+                      {d.ok
+                        ? <CheckCircle size={12} className="text-green-400 flex-shrink-0 mt-0.5" />
+                        : <AlertTriangle size={12} className="text-accent-amber flex-shrink-0 mt-0.5" />}
+                      <span><span className="text-white font-semibold">{d.label}:</span> {d.note}</span>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
-            )}
-          </div>
+            );
+          })()}
 
           {/* Atidot Nexus Intelligence */}
           <NexusCard nexusData={nexusData} />

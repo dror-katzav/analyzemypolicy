@@ -40,10 +40,18 @@ const ProtectedRoute = ({ children }) => {
   return <div className="lg:mr-[300px]">{children}</div>;
 };
 
-// Renders the sidebar only when authenticated
+// Renders the sidebar only when authenticated AND not on the landing/login page
 const AuthSidebar = () => {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <AIChatSidebar /> : null;
+  const location = useLocation();
+  if (!isAuthenticated || location.pathname === '/') return null;
+  return <AIChatSidebar />;
+};
+
+// Redirect already-authenticated users away from the landing page
+const HomeRoute = () => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Landing />;
 };
 
 // Public page that still needs sidebar margin when user is logged in
@@ -61,7 +69,7 @@ function App() {
       <Router>
         <TitleManager />
         <Routes>
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<HomeRoute />} />
           <Route path="/analyze" element={<Wizard />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />

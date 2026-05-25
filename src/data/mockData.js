@@ -39,17 +39,17 @@ export const MOCK_POLICIES = [
       {
         id: 'op-1',
         severity: 'medium',
-        title: 'Update Beneficiary Designation',
+        title: 'Your Beneficiary Designation Is 11 Years Old — Update It Today',
         description:
-          'Your beneficiary was designated in 2015. Given recent estate planning changes, confirm this still reflects your wishes.',
+          'Your beneficiary was last set in 2015. Life changes — divorce, new children, remarriage, estate plan updates — can make outdated designations legally complicated for families at the worst possible time. This takes under 10 minutes to update and is free.',
         cta: 'Review Now',
       },
       {
         id: 'op-2',
         severity: 'low',
-        title: 'Paid-Up Additions Available',
+        title: 'Buy Paid-Up Additions This Year — Window Is Open Now',
         description:
-          'You are eligible to purchase paid-up additions (PUAs) this year, which would accelerate your cash value growth tax-free.',
+          'You can purchase paid-up additions (PUAs) this policy year to accelerate your cash value tax-free. This option resets annually — if you miss this year\'s window, you cannot retroactively buy PUAs for 2026. Contact MetLife to exercise this option before your policy anniversary.',
         cta: 'Learn More',
       },
     ],
@@ -154,25 +154,25 @@ export const MOCK_POLICIES = [
       {
         id: 'op-3',
         severity: 'high',
-        title: 'Consider Conversion Before 2030',
+        title: 'You Can Convert to a Cash-Value Policy Without a Medical Exam — Get a Quote Now',
         description:
-          'Your policy allows conversion to permanent insurance without a new medical exam. Converting before age 50 locks in your current health rating and builds cash value.',
+          'Your policy includes a conversion privilege: you can switch to permanent (whole life or universal life) coverage without new underwriting. Your current health rating is locked in — meaning no medical questions, no labs, no risk of being rated up. Getting a conversion quote costs nothing and lets you compare exactly what permanent coverage would cost at today\'s rates versus waiting until 2030 when premiums will be higher.',
         cta: 'Get Conversion Quote',
       },
       {
         id: 'op-4',
         severity: 'medium',
-        title: 'Increase Coverage During Peak Earning Years',
+        title: 'Your Coverage Gap Has Likely Grown — Check It in 2 Minutes',
         description:
-          'As household income has grown, $500K may no longer be sufficient. A supplemental policy or conversion could close this gap.',
-        cta: 'Get a Better Quote',
+          'Your $500K coverage was set in 2020. Since then, inflation, income growth, and mortgage changes have likely widened the gap between what you have and what your family actually needs. Run a quick coverage check to see your number — it takes 2 minutes and requires no commitment.',
+        cta: 'Check My Gap',
       },
       {
         id: 'op-5',
         severity: 'medium',
-        title: 'Better Rates May Be Available for Your Current Coverage',
+        title: 'Better Rates Are Available Right Now — You Could Save Up to $82/Month',
         description:
-          'Market rates for 20-year term policies have fallen since 2020. Based on your age profile, comparable $500K coverage could be available for $185–220/month — potentially saving up to $82/month. A quick rate comparison takes under 5 minutes and requires no commitment.',
+          'Market rates for 20-year term policies have dropped since 2020. Based on your age and health profile, comparable $500K coverage could be available for $185–220/month — potentially saving $564–$984 per year. This is not about switching carriers; it\'s about whether you\'re paying the right price for what you have.',
         cta: 'Compare Rates Now',
       },
     ],
